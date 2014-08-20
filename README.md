@@ -34,10 +34,15 @@ Dependencies
 In the absence of superuser priveleges the following dependencies
 have been included and written into the `presto` code.
 
-* Python-Markdown (from GitHub repo, commit e7b6a33f0e) in `markdown/`
-
+* Python-Markdown (from [GitHub repo][pm], commit e7b6a33f0e) in `markdown/`
+* Grid Tables Extension for Python-Markdown (from [GitHub repo][gt], commit
+  b4d16d5d25) in `mdx_grid_tables.py`
 
 Authors
 -------
 
 `presto` was written by Alexander Breen (abreen@bu.edu).
+
+
+[pm]: https://github.com/waylan/Python-Markdown
+[gt]: https://github.com/smartboyathome/Markdown-GridTables
