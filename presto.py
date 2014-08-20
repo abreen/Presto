@@ -60,7 +60,7 @@ def main():
 
     md = markdown.Markdown(**args)
     templ = Template(open(TEMPLATE).read())
-    today = datetime.datetime.now().strftime("%B, %e %Y")
+    today = datetime.datetime.now().strftime("%B %e, %Y")
 
     cache = get_cache()
     num_published = 0
@@ -84,14 +84,13 @@ def main():
                 pprint("{} changed; publishing".format(path))
                 cache[path] = hash
 
-            body_html = md.convert(infile.read())
+            body = decomment.decomment(infile.read())
+            body_html = md.convert(body)
 
             if 'title' not in md.Meta or 'authors' not in md.Meta:
                 pprint("{} has insufficient metadata".format(path),
                        error=True)
                 continue
-
-            body_html = decomment.decomment(body_html)
 
             html = templ.safe_substitute(body=body_html,
                                          title=md.Meta['title'][0],

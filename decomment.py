@@ -5,12 +5,14 @@ def decomment(html):
     comments removed.
     """
 
-    string = ""
+    out = ""
     parser = CommentEater()
     for line in html.split('\n'):
-        string += parser.feed(html)
+        parser.feed(line)
+        out += parser.buffer + '\n'
+        parser.buffer = ""
 
-    return string
+    return out
 
 
 def _to_html_attrs(attrs):
@@ -20,40 +22,56 @@ def _to_html_attrs(attrs):
 
 class CommentEater(HTMLParser):
 
+    def __init__(self):
+        super().__init__()
+        self.buffer = ""
+
+
     def handle_starttag(self, tag, attrs):
         if not attrs:
-            print("<{}>".format(tag), end='')
+            self.buffer += "<{}>".format(tag)
         else:
-            print("<{} {}>".format(tag, _to_html_attrs(attrs)), end='')
+            self.buffer += "<{} {}>".format(tag, _to_html_attrs(attrs))
+
 
     def handle_endtag(self, tag):
-        print("</{}>".format(tag), end='')
+        self.buffer += "</{}>".format(tag)
+
 
     def handle_startendtag(self, tag, attrs):
         if not attrs:
-            print("<{} />".format(tag), end='')
+            self.buffer += "<{} />".format(tag)
         else:
-            print("<{} {} />".format(tag, _to_html_attrs(attrs)), end='')
+            self.buffer += "<{} {} />".format(tag, _to_html_attrs(attrs))
+
 
     def handle_data(self, data):
-        print(data, end='')
+        self.buffer += data
+
 
     def handle_entityref(self, name):
-        print("&{};".format(name), end='')
+        self.buffer += "&{};".format(name)
+
 
     def handle_charref(self, name):
         self.handle_entityref('#' + name)
 
+
     # where the magic happens!
     def handle_comment(self, data):
-        print('', end='')
+        return
+
 
     def handle_decl(self, decl):
-        print("<!{}>".format(decl), end='')
+        self.buffer += "<!{}>".format(decl)
+
 
     def handle_pi(self, data):
-        print("<?{}>".format(data), end='')
+        self.buffer += "<?{}>".format(data)
+
 
     def unknown_decl(self, data):
-        print("<![{}]>".format(data), end='')
+        self.buffer += "<![{}]>".format(data)
+
+
 
