@@ -67,7 +67,8 @@ def main():
 
     for dirpath, dirnames, filenames in os.walk(DRAFTS_DIR):
         for f in filenames:
-            if '.markdown' not in f: continue
+            if '.markdown' not in f: continue   # ignore all non-Markdown files
+            if f[0] == '.': continue            # ignore dotfiles
 
             path = os.path.join(dirpath, f)
             infile = open(path, mode='r', encoding='utf-8')
