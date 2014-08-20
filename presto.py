@@ -3,7 +3,9 @@ import sys
 import hashlib
 from string import Template
 import datetime
+
 import markdown
+import decomment
 
 DRAFTS_DIR = 'drafts'
 OUTPUT_DIR = '..'
@@ -88,6 +90,8 @@ def main():
                 pprint("{} has insufficient metadata".format(path),
                        error=True)
                 continue
+
+            body_html = decomment.decomment(body_html)
 
             html = templ.safe_substitute(body=body_html,
                                          title=md.Meta['title'][0],
