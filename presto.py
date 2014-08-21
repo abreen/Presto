@@ -56,7 +56,7 @@ def main():
                            mdx_grid_tables.GridTableExtension()],
             'extension_configs': {'smarty': [('smart_ellipses', False)]},
             'output_format': 'html5',
-            'safe_mode': 'escape',
+            'safe_mode': False,         # HTML passes through unaltered
             'lazy_ol': False}
 
     md = markdown.Markdown(**args)
