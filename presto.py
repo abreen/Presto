@@ -53,7 +53,7 @@ def compute_hash(file):
 
 def main():
     args = {'extensions': ['def_list', 'footnotes', 'meta', 'smarty',
-                           'headerid', 'toc',
+                           'headerid', 'toc', 'tables',
                            mdx_grid_tables.GridTableExtension()],
             'extension_configs': {'smarty': [('smart_ellipses', False)]},
             'output_format': 'html5',
