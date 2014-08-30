@@ -89,14 +89,15 @@ def main():
             body = decomment.decomment(infile.read())
             body_html = md.convert(body)
 
-            if 'title' not in md.Meta or 'authors' not in md.Meta:
-                pprint("{} has insufficient metadata".format(path),
-                       error=True)
+            if 'title' not in md.Meta:
+                pprint("{} has no title".format(path), error=True)
+
+                # invalidate cache so this file is not skipped next time
+                cache[path] = 'error'
                 continue
 
             html = templ.safe_substitute(body=body_html,
                                          title=md.Meta['title'][0],
-                                         authors=md.Meta['authors'][0],
                                          date=today)
 
             # create path to OUTPUT_DIR
