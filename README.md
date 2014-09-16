@@ -7,6 +7,9 @@ on a restrictive web server, as an alternative to other static
 website publishers that require elaborate libraries or superuser
 privileges. Its only requirement is Python 3.2 or newer.
 
+*There is a Python 2 version available.* See the `retro` branch of
+this repository.
+
 
 Usage
 -----
