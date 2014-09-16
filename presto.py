@@ -1,5 +1,3 @@
-#!/usr/local/bin/python3.3
-
 import os
 import stat
 import sys
