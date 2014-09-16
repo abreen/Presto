@@ -1,16 +1,17 @@
 presto
 ======
 
-`presto` is a Python script that helps maintain a
-static website from Markdown sources. It was written on
-`csa2.bu.edu` to fit the... unique requirements of that system.
+`presto` is a Python script that helps maintain a static website from
+Markdown sources. It was written as a custom solution for using Markdown
+on a restrictive web server, as an alternative to other static
+website publishers that require elaborate libraries or superuser
+privileges. Its only requirement is Python 3.2 or newer.
 
 
 Usage
 -----
 
-Try `python3.3 presto.py` from this directory. If you don't use
-Python 3.3, bad things might happen.
+`presto` is a command-line program, and it runs with no arguments.
 
 When `presto` runs, it will determine which draft Markdown files have
 changed since last time. It will only update the HTML for those files.
@@ -25,37 +26,19 @@ output file.
 
 Markdown sources are drawn from the `drafts` directory. Each file should
 have the extension `.markdown`. The file tree starting from `drafts` is
-essentially mirrored to the web root, with the exception of the `img`,
-`js`, and `css` directories, which live here (the `presto` directory).
-These directories (and any others) should be symlinked to from wherever
-`OUTPUT_DIR` is set.
-
-If you want to add another directory (for example, for PDF files), you
-could just create a new directory at the web root as normal. However, it
-might be a better idea to create the directory here (inside the `presto`
-directory) and symlink to it from `OUTPUT_DIR`. This way if anything odd
-happens with the HTML, you can just completely wipe out the files under
-`OUTPUT_DIR`, delete `presto-cache`, and invoke `presto` again to
-rebuild everything.
+mirrored to `OUTPUT_DIR`.
 
 
 Notes
 -----
 * If you want to force `presto` to rewrite all HTML (if, for example,
-  you've changed the `template.html` file), just delete the
-  `presto-cache` file.
-
-
-Dependencies
-------------
-
-In the absence of superuser privileges the following dependencies
-have been included and written into the `presto` code.
-
-* Python-Markdown (from GitHub repo, commit e7b6a33f0e) in `markdown/`
+  you changed the `template.html` file), just delete the
+  `cache` file.
 
 
 Authors
 -------
 
 `presto` was written by Alexander Breen (abreen@bu.edu).
+The other source files in this repository are property of their
+respective authors. See each `py` file.
