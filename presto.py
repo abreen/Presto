@@ -22,6 +22,7 @@ def main():
 
     args = {'extensions': ['def_list', 'footnotes', 'meta', 'smarty',
                            'headerid', 'tables', 'codehilite',
+                           'admonition',
                            mdx_grid_tables.GridTableExtension(),
                            tocnew.TocExtension()],
             'extension_configs': {'smarty': [('smart_ellipses', False)]},
@@ -47,7 +48,7 @@ def main():
             if '.markdown' not in f and f != 'htaccess':
                 continue
 
-            if f[0] == '.':
+            if f[0] in ['.', '#']:
                 continue
 
             if f[-1] == '~':
