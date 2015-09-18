@@ -202,7 +202,7 @@ def makedirs(dirpath):
 
 def executable(f):
     s = os.stat(f)
-    return s.st_mode & stat.S_IXGRP
+    return s.st_mode & stat.S_IXUSR
 
 
 def copy_htaccess(path):
