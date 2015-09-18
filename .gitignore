@@ -1,4 +1,6 @@
-presto-cache
+cache
+drafts
+template.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
