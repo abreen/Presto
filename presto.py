@@ -33,6 +33,7 @@ def main():
     md = markdown.Markdown(**args)
     templ = Template(open(TEMPLATE).read())
     today = datetime.datetime.now().strftime("%B %e, %Y")
+    footer = "Last modified on " + today + "."
 
     num_published, num_errors, num_skipped = 0, 0, 0
 
@@ -98,7 +99,7 @@ def main():
 
             html = templ.safe_substitute(body=body_html,
                                          title=md.Meta['title'][0],
-                                         date=today)
+                                         footer=footer)
 
             # create path to OUTPUT_DIR
             parts = path.replace('.markdown', '.html').split(os.sep)
