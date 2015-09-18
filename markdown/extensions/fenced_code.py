@@ -4,87 +4,15 @@ Fenced Code Extension for Python Markdown
 
 This extension adds Fenced Code Blocks to Python-Markdown.
 
-    >>> import markdown
-    >>> text = '''
-    ... A paragraph before a fenced code block:
-    ...
-    ... ~~~
-    ... Fenced code block
-    ... ~~~
-    ... '''
-    >>> html = markdown.markdown(text, extensions=['fenced_code'])
-    >>> print(html)
-    <p>A paragraph before a fenced code block:</p>
-    <pre><code>Fenced code block
-    </code></pre>
+See <https://pythonhosted.org/Markdown/extensions/fenced_code_blocks.html>
+for documentation.
 
-Works with safe_mode also (we check this because we are using the HtmlStash):
+Original code Copyright 2007-2008 [Waylan Limberg](http://achinghead.com/).
 
-    >>> print(markdown.markdown(text, extensions=['fenced_code'], safe_mode='replace'))
-    <p>A paragraph before a fenced code block:</p>
-    <pre><code>Fenced code block
-    </code></pre>
 
-Include tilde's in a code block and wrap with blank lines:
+All changes Copyright 2008-2014 The Python Markdown Project
 
-    >>> text = '''
-    ... ~~~~~~~~
-    ...
-    ... ~~~~
-    ... ~~~~~~~~'''
-    >>> print(markdown.markdown(text, extensions=['fenced_code']))
-    <pre><code>
-    ~~~~
-    </code></pre>
-
-Language tags:
-
-    >>> text = '''
-    ... ~~~~{.python}
-    ... # Some python code
-    ... ~~~~'''
-    >>> print(markdown.markdown(text, extensions=['fenced_code']))
-    <pre><code class="python"># Some python code
-    </code></pre>
-
-Optionally backticks instead of tildes as per how github's code block markdown is identified:
-
-    >>> text = '''
-    ... `````
-    ... # Arbitrary code
-    ... ~~~~~ # these tildes will not close the block
-    ... `````'''
-    >>> print(markdown.markdown(text, extensions=['fenced_code']))
-    <pre><code># Arbitrary code
-    ~~~~~ # these tildes will not close the block
-    </code></pre>
-
-If the codehighlite extension and Pygments are installed, lines can be highlighted:
-
-    >>> text = '''
-    ... ```hl_lines="1 3"
-    ... line 1
-    ... line 2
-    ... line 3
-    ... ```'''
-    >>> print(markdown.markdown(text, extensions=['codehilite', 'fenced_code']))
-    <div class="codehilite"><pre><span class="hll"><span class="n">line</span> <span class="mi">1</span>
-    </span><span class="n">line</span> <span class="mi">2</span>
-    <span class="hll"><span class="n">line</span> <span class="mi">3</span>
-    </span></pre></div>
-
-Copyright 2007-2008 [Waylan Limberg](http://achinghead.com/).
-
-Project website: <http://packages.python.org/Markdown/extensions/fenced_code_blocks.html>
-Contact: markdown@freewisdom.org
-
-License: BSD (see ../docs/LICENSE for details)
-
-Dependencies:
-* [Python 2.4+](http://python.org)
-* [Markdown 2.0+](http://packages.python.org/Markdown/)
-* [Pygments (optional)](http://pygments.org)
-
+License: [BSD](http://www.opensource.org/licenses/bsd-license.php)
 """
 
 from __future__ import absolute_import
@@ -102,8 +30,8 @@ class FencedCodeExtension(Extension):
         md.registerExtension(self)
 
         md.preprocessors.add('fenced_code_block',
-                                 FencedBlockPreprocessor(md),
-                                 ">normalize_whitespace")
+                             FencedBlockPreprocessor(md),
+                             ">normalize_whitespace")
 
 
 class FencedBlockPreprocessor(Preprocessor):
@@ -147,21 +75,26 @@ class FencedBlockPreprocessor(Preprocessor):
                 # If config is not empty, then the codehighlite extension
                 # is enabled, so we call it to highlight the code
                 if self.codehilite_conf:
-                    highliter = CodeHilite(m.group('code'),
-                            linenums=self.codehilite_conf['linenums'][0],
-                            guess_lang=self.codehilite_conf['guess_lang'][0],
-                            css_class=self.codehilite_conf['css_class'][0],
-                            style=self.codehilite_conf['pygments_style'][0],
-                            lang=(m.group('lang') or None),
-                            noclasses=self.codehilite_conf['noclasses'][0],
-                            hl_lines=parse_hl_lines(m.group('hl_lines')))
+                    highliter = CodeHilite(
+                        m.group('code'),
+                        linenums=self.codehilite_conf['linenums'][0],
+                        guess_lang=self.codehilite_conf['guess_lang'][0],
+                        css_class=self.codehilite_conf['css_class'][0],
+                        style=self.codehilite_conf['pygments_style'][0],
+                        lang=(m.group('lang') or None),
+                        noclasses=self.codehilite_conf['noclasses'][0],
+                        hl_lines=parse_hl_lines(m.group('hl_lines'))
+                    )
 
                     code = highliter.hilite()
                 else:
-                    code = self.CODE_WRAP % (lang, self._escape(m.group('code')))
+                    code = self.CODE_WRAP % (lang,
+                                             self._escape(m.group('code')))
 
                 placeholder = self.markdown.htmlStash.store(code, safe=True)
-                text = '%s\n%s\n%s'% (text[:m.start()], placeholder, text[m.end():])
+                text = '%s\n%s\n%s' % (text[:m.start()],
+                                       placeholder,
+                                       text[m.end():])
             else:
                 break
         return text.split("\n")
@@ -177,4 +110,3 @@ class FencedBlockPreprocessor(Preprocessor):
 
 def makeExtension(*args, **kwargs):
     return FencedCodeExtension(*args, **kwargs)
-
