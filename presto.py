@@ -7,7 +7,6 @@ import datetime
 
 import markdown
 import mdx_grid_tables
-import decomment
 
 import pygments
 
@@ -86,8 +85,7 @@ def main():
                     num_published += 1
                 continue
 
-            body = decomment.decomment(infile.read())
-            body_html = md.convert(body)
+            body_html = md.convert(infile.read())
 
             if 'title' not in md.Meta:
                 pprint("{} has no title".format(path), error=True)
