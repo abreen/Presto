@@ -7,7 +7,6 @@ import datetime
 
 import markdown
 import mdx_grid_tables
-import tocnew
 import decomment
 
 import pygments
@@ -25,8 +24,7 @@ def main():
     args = {'extensions': ['def_list', 'footnotes', 'meta', 'smarty',
                            'headerid', 'tables', 'codehilite',
                            'admonition',
-                           mdx_grid_tables.GridTableExtension(),
-                           tocnew.TocExtension()],
+                           mdx_grid_tables.GridTableExtension()],
             'extension_configs': {'smarty': [('smart_ellipses', False)]},
             'output_format': 'html5',
             'safe_mode': False,         # HTML passes through unaltered
