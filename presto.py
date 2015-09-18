@@ -10,6 +10,8 @@ import mdx_grid_tables
 import tocnew
 import decomment
 
+import pygments
+
 DRAFTS_DIR = 'drafts'
 OUTPUT_DIR = 'output'
 PRESTO_DIR = os.getcwd()
