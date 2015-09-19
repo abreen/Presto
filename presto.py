@@ -7,26 +7,33 @@ import datetime
 
 import markdown
 import mdx_grid_tables
-
 import pygments
+import bleach
 
 DRAFTS_DIR = 'drafts'
 OUTPUT_DIR = 'output'
 PRESTO_DIR = os.getcwd()
 TEMPLATE = PRESTO_DIR + '/template.html'
 CACHE_FILE = PRESTO_DIR + '/cache'
-
+ALLOWED_TAGS = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol',
+                'strong', 'ul', 'img', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'div',
+                'span', 'p', 'tt', 'pre', 'figure', 'caption', 'h1', 'h2', 'h3', 'h4', 'h5',
+                'h6', 'dd', 'dt', 'dl', 'br', 'hr']
+ALLOWED_ATTRIBUTES = {
+    '*': ['title', 'class', 'name', 'id'],
+    'a': ['href', 'target'],
+    'img': ['src', 'alt'],
+}
 
 def main():
     os.umask(0o002)
 
     args = {'extensions': ['def_list', 'footnotes', 'meta', 'smarty',
                            'headerid', 'tables', 'codehilite',
-                           'admonition',
+                           'admonition', 'toc',
                            mdx_grid_tables.GridTableExtension()],
             'extension_configs': {'smarty': [('smart_ellipses', False)]},
             'output_format': 'html5',
-            'safe_mode': False,         # HTML passes through unaltered
             'lazy_ol': False}
 
     md = markdown.Markdown(**args)
@@ -85,7 +92,8 @@ def main():
                     num_published += 1
                 continue
 
-            body_html = md.convert(infile.read())
+            cleaned = bleach.clean(infile.read(), ALLOWED_TAGS, ALLOWED_ATTRIBUTES)
+            body_html = md.convert(cleaned)
 
             if 'title' not in md.Meta:
                 pprint("{} has no title".format(path), error=True)
