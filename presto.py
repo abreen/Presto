@@ -23,8 +23,7 @@ def main():
     conf.read('presto.ini')
 
     if 'presto' not in conf:
-        pprint('presto.ini could not be found, or no [presto] section found',
-               error=True)
+        error('presto.ini could not be found, or no [presto] section found')
         sys.exit(1)
 
     markdown_dir = conf['presto']['markdown_dir']
@@ -38,6 +37,7 @@ def main():
                            'headerid', 'tables', 'codehilite',
                            'admonition', 'toc',
                            mdx_grid_tables.GridTableExtension()],
+
             'extension_configs': {'smarty': [('smart_ellipses', False)]},
             'output_format': 'html5',
             'lazy_ol': False}
@@ -52,7 +52,7 @@ def main():
     try:
         cache = get_cache(cache_file)
     except:
-        pprint("could not open cache file", error=True)
+        error('could not open cache file')
         cache = {}
         num_errors += 1
 
@@ -70,23 +70,26 @@ def main():
                 continue
 
             path = os.path.join(dirpath, f)
+            relpath = os.path.relpath(path, markdown_dir)
 
             if executable(path):
-                expected_files.append(path)
+                expected_files.append(relpath)
+            else:
+                if relpath in cache:
+                    del cache[relpath]
 
             try:
                 infile = open(path, mode='r', encoding='utf-8')
             except PermissionError:
-                pprint("insufficient permission to read "
-                       "draft '{}'".format(f), error=True)
+                error("insufficient permission to read '{}'".format(f))
                 num_errors += 1
                 continue
 
             hash = compute_hash(infile)
 
-            if path not in cache or cache[path] != hash:
+            if relpath not in cache or cache[relpath] != hash:
                 if executable(path):
-                    cache[path] = hash
+                    cache[relpath] = hash
                 else:
                     num_skipped += 1
                     continue
@@ -102,32 +105,34 @@ def main():
                 continue
 
             content = infile.read()
-            cleaned = re.sub(comment_pat, '', content)
+            cleaned = re.sub(COMMENT_PATTERN, '', content)
             body_html = md.convert(cleaned)
 
             if 'title' not in md.Meta:
-                pprint("{} has no title".format(path), error=True)
+                error('{} has no title'.format(relpath))
 
                 # invalidate cache so this file is not skipped next time
-                cache[path] = 'bad-metadata'
+                cache[relpath] = 'bad-metadata'
                 num_errors += 1
                 continue
 
-            html = templ.safe_substitute(body=body_html,
-                                         title=md.Meta['title'][0],
-                                         footer=footer)
+            html = templ.safe_substitute(
+                body=body_html,
+                title=md.Meta['title'][0],
+                footer=footer
+            )
 
             # create path to output directory
-            parts = path.replace('.markdown', '.html').split(os.sep)
-            output_path = output_dir + os.sep + os.sep.join(parts[1:])
+            output_path = os.path.join(
+                output_dir,
+                relpath.replace('.markdown', '.html')
+            )
 
             try:
                 makedirs(os.path.dirname(output_path))
             except:
-                pprint("could not make directories "
-                       "for '{}'".format(output_path),
-                       error=True)
-                cache[path] = 'dirs-failed'
+                error("cannot make directories for '{}'".format(output_path))
+                cache[relpath] = 'dirs-failed'
                 num_errors += 1
                 continue
 
@@ -135,15 +140,13 @@ def main():
                 with open(output_path, mode='w') as of:
                     of.write(html)
             except:
-                pprint("could not write output file "
-                       "'{}'".format(output_path),
-                       error=True)
-                cache[path] = 'write-failed'
+                error("cannot write output file '{}'".format(output_path))
+                cache[relpath] = 'write-failed'
                 num_errors += 1
                 continue
 
             num_published += 1
-            pprint("published '{}'".format(output_path))
+            print("published '{}'".format(output_path))
 
             md.reset()
 
@@ -155,47 +158,41 @@ def main():
                 continue
 
             path = os.path.join(dirpath, f)
+            relpath = os.path.relpath(path, output_dir)
 
-            orig_base = os.path.join(
-                            markdown_dir,
-                            os.sep.join(dirpath.split(os.sep)[1:])
-                        )
-
+            head, tail = os.path.split(relpath)
             if f == '.htaccess':
-                orig_path = os.path.join(orig_base, 'htaccess')
+                relpath = os.path.join(head, 'htaccess')
             else:
-                orig_path = os.path.join(orig_base, f.replace('.html', '.markdown'))
+                relpath = os.path.join(head, f.replace('.html', '.markdown'))
 
-            if orig_path not in expected_files:
-                if orig_path in cache:
-                    del cache[orig_path]
+            if relpath not in expected_files:
+                if relpath in cache:
+                    del cache[relpath]
 
-                os.remove(os.path.join(dirpath, f))
+                os.remove(path)
                 num_removed += 1
                 print("removed '{}'".format(path))
 
     # make one more pass to remove any directories that are now empty
     for dirpath, dirnames, filenames in os.walk(output_dir):
         if len(filenames) == 0 and len(dirnames) == 0:
-            os.rmdir(os.path.join(dirpath))
+            os.rmdir(dirpath)
             print("removed empty directory '{}'".format(dirpath))
 
     try:
         write_cache(cache, cache_file)
     except:
-        pprint("could not write cache file", error=True)
+        error('could not write cache file')
         num_errors += 1
 
-    pprint("{} published, {} errors, {} skipped, {} removed".format(
+    print("{} published, {} errors, {} skipped, {} removed".format(
         num_published, num_errors, num_skipped, num_removed
     ))
 
 
-def pprint(s, error=False):
-    if error:
-        print("presto: error: " + s, file=sys.stderr)
-    else:
-        print("presto: " + s, file=sys.stdout)
+def error(msg):
+    print('presto: error: ' + msg, file=sys.stderr)
 
 
 def get_cache(cache_file):
@@ -246,6 +243,7 @@ def makedirs(dirpath):
         # make this directory if it does not exist
         if not os.path.isdir(dirpath):
             os.mkdir(dirpath)
+            print("created directory '{}'".format(dirpath))
 
 
 def executable(f):
@@ -263,9 +261,7 @@ def copy_htaccess(path, output_dir):
     try:
         makedirs(os.path.dirname(output_path))
     except:
-        pprint("could not make directories "
-               "for htaccess file '{}'".format(output_path),
-               error=True)
+        error("cannot make directories for htaccess '{}'".format(output_path))
         os.umask(old_umask)
         return False
 
@@ -276,8 +272,7 @@ def copy_htaccess(path, output_dir):
             with open(output_path, mode='w') as of:
                 of.write(htfile.read())
     except:
-        pprint("could not write htaccess file "
-               "'{}'".format(output_path), error=True)
+        error("could not create htaccess '{}'".format(output_path))
         os.umask(old_umask)
         return False
 
@@ -286,6 +281,7 @@ def copy_htaccess(path, output_dir):
         os.chmod(output_path, st.st_mode | stat.S_IXGRP | stat.S_IXOTH)
 
     os.umask(old_umask)
+    print("created htaccess file '{}'".format(output_path))
     return True
 
 
