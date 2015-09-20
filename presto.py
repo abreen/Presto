@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append('lib')
+
 import os
 import stat
 import sys
