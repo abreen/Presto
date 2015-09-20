@@ -170,9 +170,13 @@ def main():
                 if relpath in cache:
                     del cache[relpath]
 
-                os.remove(path)
-                num_removed += 1
-                print("removed '{}'".format(path))
+                try:
+                    os.remove(path)
+                    num_removed += 1
+                    print("removed '{}'".format(path))
+                except PermissionError:
+                    error("insufficient permissions removing '{}'".format(path))
+                    num_errors += 1
 
     # make one more pass to remove any directories that are now empty
     for dirpath, dirnames, filenames in os.walk(output_dir):
