@@ -1,0 +1,22 @@
+; presto configuration file
+; copy this file to presto.ini and edit that file
+
+; this file is read using Python's configparser module
+; the [presto] section is required
+
+; relative paths are allowed; they are relative to wherever presto.py is run
+
+[presto]
+; path to directory storing Markdown files
+markdown_dir = drafts
+
+; path to directoy that should contain the output HTML
+output_dir = output
+
+; path to an HTML file with $variables
+template_file = template.html
+
+; path to cache file
+; this file stores hashes of Markdown sources so presto will only update files
+; that have changed since the last time HTML was generated
+cache_file = cache

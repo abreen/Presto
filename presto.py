@@ -4,7 +4,7 @@ sys.path.append('lib')
 
 import os
 import stat
-import sys
+import configparser
 import hashlib
 from string import Template
 import datetime
@@ -14,11 +14,6 @@ import mdx_grid_tables
 import pygments
 import bleach
 
-DRAFTS_DIR = 'drafts'
-OUTPUT_DIR = 'output'
-PRESTO_DIR = os.getcwd()
-TEMPLATE = PRESTO_DIR + '/template.html'
-CACHE_FILE = PRESTO_DIR + '/cache'
 ALLOWED_TAGS = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol',
                 'strong', 'ul', 'img', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'div',
                 'span', 'p', 'tt', 'pre', 'figure', 'caption', 'h1', 'h2', 'h3', 'h4', 'h5',
@@ -30,6 +25,19 @@ ALLOWED_ATTRIBUTES = {
 }
 
 def main():
+    conf = configparser.ConfigParser()
+    conf.read('presto.ini')
+
+    if 'presto' not in conf:
+        pprint('presto.ini could not be found, or no [presto] section found',
+               error=True)
+        sys.exit(1)
+
+    markdown_dir = conf['presto']['markdown_dir']
+    output_dir = conf['presto']['output_dir']
+    template_file = conf['presto']['template_file']
+    cache_file = conf['presto']['cache_file']
+
     os.umask(0o002)
 
     args = {'extensions': ['def_list', 'footnotes', 'meta', 'smarty',
@@ -41,20 +49,20 @@ def main():
             'lazy_ol': False}
 
     md = markdown.Markdown(**args)
-    templ = Template(open(TEMPLATE).read())
+    templ = Template(open(template_file).read())
     today = datetime.datetime.now().strftime("%B %e, %Y")
     footer = "Last modified on " + today + "."
 
     num_published, num_errors, num_skipped = 0, 0, 0
 
     try:
-        cache = get_cache()
+        cache = get_cache(cache_file)
     except:
         pprint("could not open cache file", error=True)
         cache = {}
         num_errors +=1
 
-    for dirpath, dirnames, filenames in os.walk(DRAFTS_DIR):
+    for dirpath, dirnames, filenames in os.walk(markdown_dir):
         for f in filenames:
             if '.markdown' not in f and f != 'htaccess':
                 continue
@@ -90,7 +98,7 @@ def main():
                 continue
 
             if f == 'htaccess':
-                if not copy_htaccess(path):
+                if not copy_htaccess(path, output_dir):
                     num_errors += 1
                 else:
                     num_published += 1
@@ -113,7 +121,7 @@ def main():
 
             # create path to OUTPUT_DIR
             parts = path.replace('.markdown', '.html').split(os.sep)
-            output_path = OUTPUT_DIR + os.sep + os.sep.join(parts[1:])
+            output_path = output_dir + os.sep + os.sep.join(parts[1:])
 
             try:
                 makedirs(os.path.dirname(output_path))
@@ -142,7 +150,7 @@ def main():
             md.reset()
 
     try:
-        write_cache(cache)
+        write_cache(cache, cache_file)
     except:
         pprint("could not write cache file", error=True)
         num_errors +=1
@@ -158,13 +166,13 @@ def pprint(s, error=False):
         print("presto: " + s, file=sys.stdout)
 
 
-def get_cache():
+def get_cache(cache_file):
     cache = {}
 
-    if not os.path.isfile(CACHE_FILE):
+    if not os.path.isfile(cache_file):
         return cache
 
-    with open(CACHE_FILE, mode='r') as f:
+    with open(cache_file, mode='r') as f:
         for line in f:
             tokens = line.split()
             cache[tokens[0]] = tokens[1]
@@ -172,8 +180,8 @@ def get_cache():
     return cache
 
 
-def write_cache(cache):
-    with open(CACHE_FILE, mode='w') as f:
+def write_cache(cache, cache_file):
+    with open(cache_file, mode='w') as f:
         for (k, v) in cache.items():
             f.write("{}\t{}\n".format(k, v))
 
@@ -213,12 +221,12 @@ def executable(f):
     return s.st_mode & stat.S_IXUSR
 
 
-def copy_htaccess(path):
+def copy_htaccess(path, output_dir):
     old_umask = os.umask(0o002)
 
     parts = path.split(os.sep)
     parts[-1] = '.htaccess'
-    output_path = OUTPUT_DIR + os.sep + os.sep.join(parts[1:])
+    output_path = output_dir + os.sep + os.sep.join(parts[1:])
 
     try:
         makedirs(os.path.dirname(output_path))
