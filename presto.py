@@ -10,21 +10,13 @@ import configparser
 import hashlib
 from string import Template
 import datetime
+import re
 
 import markdown
 import mdx_grid_tables
 import pygments
-import bleach
 
-ALLOWED_TAGS = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol',
-                'strong', 'ul', 'img', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'div',
-                'span', 'p', 'tt', 'pre', 'figure', 'caption', 'h1', 'h2', 'h3', 'h4', 'h5',
-                'h6', 'dd', 'dt', 'dl', 'br', 'hr']
-ALLOWED_ATTRIBUTES = {
-    '*': ['title', 'class', 'name', 'id'],
-    'a': ['href', 'target'],
-    'img': ['src', 'alt'],
-}
+COMMENT_PATTERN = re.compile(r'(<!--.*-->)', re.DOTALL)
 
 def main():
     conf = configparser.ConfigParser()
@@ -62,7 +54,7 @@ def main():
     except:
         pprint("could not open cache file", error=True)
         cache = {}
-        num_errors +=1
+        num_errors += 1
 
     expected_files = []
 
@@ -109,7 +101,8 @@ def main():
                     num_published += 1
                 continue
 
-            cleaned = bleach.clean(infile.read(), ALLOWED_TAGS, ALLOWED_ATTRIBUTES)
+            content = infile.read()
+            cleaned = re.sub(comment_pat, '', content)
             body_html = md.convert(cleaned)
 
             if 'title' not in md.Meta:
