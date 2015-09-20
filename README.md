@@ -21,22 +21,23 @@ changed since last time. It will only update the HTML for those files.
 
 When a file is updated, the Markdown source is converted to HTML
 and placed inside an HTML template. Then the new HTML file is saved
-to the HTML output directory (defined as `OUTPUT_DIR` in `presto.py`).
+to the HTML output directory (`presto` uses the `output_dir` variable
+defined in the configuration file).
 
 If any HTML is found in the Markdown file, it is preserved and written
 to the output HTML file. However, any HTML comments are removed from the
 output file.
 
-Markdown sources are drawn from the `drafts` directory. Each file should
-have the extension `.markdown`. The file tree starting from `drafts` is
-mirrored to `OUTPUT_DIR`.
+Markdown sources are drawn from the `markdown_dir` (from the configuration file)
+directory. Each file should have the extension `.markdown`. The file tree
+starting from `markdown_dir` is mirrored to `output_dir`.
 
 
 Notes
 -----
 * If you want to force `presto` to rewrite all HTML (if, for example,
   you changed the `template.html` file), just delete the
-  `cache` file.
+  cache file.
 
 
 Authors
@@ -44,4 +45,4 @@ Authors
 
 `presto` was written by Alexander Breen (abreen@bu.edu).
 The other source files in this repository are property of their
-respective authors. See each `py` file.
+respective authors. See each module or package in the `lib/` directory.
