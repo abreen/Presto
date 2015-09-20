@@ -53,7 +53,7 @@ def main():
     today = datetime.datetime.now().strftime("%B %e, %Y")
     footer = "Last modified on " + today + "."
 
-    num_published, num_errors, num_skipped = 0, 0, 0
+    num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
 
     try:
         cache = get_cache(cache_file)
@@ -61,6 +61,8 @@ def main():
         pprint("could not open cache file", error=True)
         cache = {}
         num_errors +=1
+
+    expected_files = []
 
     for dirpath, dirnames, filenames in os.walk(markdown_dir):
         for f in filenames:
@@ -74,6 +76,10 @@ def main():
                 continue
 
             path = os.path.join(dirpath, f)
+
+            if executable(path):
+                expected_files.append(path)
+
             try:
                 infile = open(path, mode='r', encoding='utf-8')
             except PermissionError:
@@ -86,11 +92,8 @@ def main():
 
             if path not in cache or cache[path] != hash:
                 if executable(path):
-                    pprint("publishing '{}'".format(path))
                     cache[path] = hash
                 else:
-                    pprint("skipping '{}': "
-                           "execute bit not set".format(f))
                     num_skipped += 1
                     continue
             else:
@@ -119,7 +122,7 @@ def main():
                                          title=md.Meta['title'][0],
                                          footer=footer)
 
-            # create path to OUTPUT_DIR
+            # create path to output directory
             parts = path.replace('.markdown', '.html').split(os.sep)
             output_path = output_dir + os.sep + os.sep.join(parts[1:])
 
@@ -145,18 +148,52 @@ def main():
                 continue
 
             num_published += 1
-            pprint("wrote {}".format(output_path))
+            pprint("published '{}'".format(output_path))
 
             md.reset()
+
+    # done publishing all HTML
+    # now remove the HTML files for non-existent Markdown
+    for dirpath, dirnames, filenames in os.walk(output_dir):
+        for f in filenames:
+            if f[0] == '.' and f != '.htaccess':
+                continue
+
+            path = os.path.join(dirpath, f)
+
+            orig_base = os.path.join(
+                            markdown_dir,
+                            os.sep.join(dirpath.split(os.sep)[1:])
+                        )
+
+            if f == '.htaccess':
+                orig_path = os.path.join(orig_base, 'htaccess')
+            else:
+                orig_path = os.path.join(orig_base, f.replace('.html', '.markdown'))
+
+            if orig_path not in expected_files:
+                if orig_path in cache:
+                    del cache[orig_path]
+
+                os.remove(os.path.join(dirpath, f))
+                num_removed += 1
+                print("removed '{}'".format(path))
+
+    # make one more pass to remove any directories that are now empty
+    for dirpath, dirnames, filenames in os.walk(output_dir):
+        if len(filenames) == 0 and len(dirnames) == 0:
+            os.rmdir(os.path.join(dirpath))
+            print("removed empty directory '{}'".format(dirpath))
 
     try:
         write_cache(cache, cache_file)
     except:
         pprint("could not write cache file", error=True)
-        num_errors +=1
+        num_errors += 1
 
-    pprint("{} published ({} errors, "
-           "{} skipped)".format(num_published, num_errors, num_skipped))
+    pprint("{} published, {} errors, {} skipped, {} removed".format(
+        num_published, num_errors, num_skipped, num_removed
+    ))
 
 
 def pprint(s, error=False):
