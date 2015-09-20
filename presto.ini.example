@@ -10,7 +10,7 @@
 ; path to directory storing Markdown files
 markdown_dir = drafts
 
-; path to directoy that should contain the output HTML
+; path to directory that should contain the output HTML
 output_dir = output
 
 ; path to an HTML file with $variables
