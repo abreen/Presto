@@ -16,7 +16,7 @@ import markdown
 import mdx_grid_tables
 import pygments
 
-COMMENT_PATTERN = re.compile(r'(<!--.*-->)', re.DOTALL)
+COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
 
 def main():
     conf = configparser.ConfigParser()
