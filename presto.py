@@ -181,8 +181,11 @@ def main():
     # make one more pass to remove any directories that are now empty
     for dirpath, dirnames, filenames in os.walk(output_dir):
         if len(filenames) == 0 and len(dirnames) == 0:
-            os.rmdir(dirpath)
-            print("removed empty directory '{}'".format(dirpath))
+            try:
+                os.rmdir(dirpath)
+                print("removed empty directory '{}'".format(dirpath))
+            except PermissionError:
+                error("insufficient permissions removing directory '{}'".format(dirpath))
 
     try:
         write_cache(cache, cache_file)
