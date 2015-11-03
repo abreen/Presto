@@ -20,3 +20,8 @@ template_file = template.html
 ; this file stores hashes of Markdown sources so presto will only update files
 ; that have changed since the last time HTML was generated
 cache_file = cache
+
+; comma-separated list of whitelisted directories
+; these are relative paths to directories in the HTML output directory that should be
+; left alone when presto tries to clean up that directory
+whitelist =

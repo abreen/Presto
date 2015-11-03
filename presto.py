@@ -30,6 +30,10 @@ def main():
     output_dir = conf['presto']['output_dir']
     template_file = conf['presto']['template_file']
     cache_file = conf['presto']['cache_file']
+    whitelist = conf['presto']['whitelist']
+
+    # post-process the whitelist: split on commas and remove extra spaces
+    whitelist = {s.strip() for s in whitelist.split(',')}
 
     os.umask(0o002)
 
@@ -153,6 +157,15 @@ def main():
     # done publishing all HTML
     # now remove the HTML files for non-existent Markdown
     for dirpath, dirnames, filenames in os.walk(output_dir):
+
+        # skip any directories specified in the whitelist
+        for d in dirnames:
+            dirname = os.path.join(dirpath, d)
+            reldirname = os.path.relpath(dirname, output_dir)
+
+            if reldirname in whitelist:
+                dirnames.remove(d)
+
         for f in filenames:
             if f[0] == '.' and f != '.htaccess':
                 continue
@@ -180,6 +193,15 @@ def main():
 
     # make one more pass to remove any directories that are now empty
     for dirpath, dirnames, filenames in os.walk(output_dir):
+
+        # skip any directories specified in the whitelist
+        for d in dirnames:
+            dirname = os.path.join(dirpath, d)
+            reldirname = os.path.relpath(dirname, output_dir)
+
+            if reldirname in whitelist:
+                dirnames.remove(d)
+
         if len(filenames) == 0 and len(dirnames) == 0:
             try:
                 os.rmdir(dirpath)
