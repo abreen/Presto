@@ -213,9 +213,9 @@ def main():
         if len(filenames) == 0 and len(dirnames) == 0:
             try:
                 os.rmdir(dirpath)
-                removed('empty directory ' + reldirname)
+                removed('empty directory ' + dirpath)
             except PermissionError:
-                error("insufficient permissions removing directory '{}'".format(reldirname))
+                error("insufficient permissions removing directory '{}'".format(dirpath))
 
     try:
         write_cache(cache, cache_file)
