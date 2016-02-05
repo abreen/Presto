@@ -85,7 +85,7 @@ def main():
             try:
                 infile = open(path, mode='r', encoding='utf-8')
             except PermissionError:
-                error("insufficient permission to read '{}'".format(f))
+                error("insufficient permission to read '{}'".format(relpath))
                 num_errors += 1
                 continue
 
@@ -135,7 +135,7 @@ def main():
             try:
                 makedirs(os.path.dirname(output_path))
             except:
-                error("cannot make directories for '{}'".format(output_path))
+                error("cannot make directories for '{}'".format(relpath))
                 cache[relpath] = 'dirs-failed'
                 num_errors += 1
                 continue
@@ -144,13 +144,13 @@ def main():
                 with open(output_path, mode='w') as of:
                     of.write(html)
             except:
-                error("cannot write output file '{}'".format(output_path))
+                error("cannot write output file '{}'".format(relpath))
                 cache[relpath] = 'write-failed'
                 num_errors += 1
                 continue
 
             num_published += 1
-            print("published '{}'".format(output_path))
+            published(relpath)
 
             md.reset()
 
@@ -190,9 +190,9 @@ def main():
                 try:
                     os.remove(path)
                     num_removed += 1
-                    print("removed '{}'".format(path))
+                    removed(relpath)
                 except PermissionError:
-                    error("insufficient permissions removing '{}'".format(path))
+                    error("insufficient permissions removing '{}'".format(relpath))
                     num_errors += 1
 
     # make one more pass to remove any directories that are now empty
@@ -213,9 +213,9 @@ def main():
         if len(filenames) == 0 and len(dirnames) == 0:
             try:
                 os.rmdir(dirpath)
-                print("removed empty directory '{}'".format(dirpath))
+                removed('empty directory ' + reldirname)
             except PermissionError:
-                error("insufficient permissions removing directory '{}'".format(dirpath))
+                error("insufficient permissions removing directory '{}'".format(reldirname))
 
     try:
         write_cache(cache, cache_file)
@@ -223,13 +223,21 @@ def main():
         error('could not write cache file')
         num_errors += 1
 
-    print("{} published, {} errors, {} skipped, {} removed".format(
+    print('{} published, {} errors, {} skipped, {} removed'.format(
         num_published, num_errors, num_skipped, num_removed
     ))
 
 
 def error(msg):
-    print('presto: error: ' + msg, file=sys.stderr)
+    print('\033[31merror:\033[0m', msg, file=sys.stderr)
+
+
+def published(msg):
+    print('\033[32m[published]\033[0m', msg)
+
+
+def removed(msg):
+    print('\033[35m[removed]\033[0m', msg)
 
 
 def get_cache(cache_file):
