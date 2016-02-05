@@ -33,7 +33,7 @@ def main():
     whitelist = conf['presto']['whitelist']
 
     # post-process the whitelist: split on commas and remove extra spaces
-    whitelist = {s.strip() for s in whitelist.split(',')}
+    whitelist = [s.strip() for s in whitelist.split(',')]
 
     os.umask(0o002)
 
@@ -159,12 +159,16 @@ def main():
     for dirpath, dirnames, filenames in os.walk(output_dir):
 
         # skip any directories specified in the whitelist
-        for d in dirnames:
-            dirname = os.path.join(dirpath, d)
-            reldirname = os.path.relpath(dirname, output_dir)
+        while True:
+            for d in dirnames:
+                dirname = os.path.join(dirpath, d)
+                reldirname = os.path.relpath(dirname, output_dir)
 
-            if reldirname in whitelist:
-                dirnames.remove(d)
+                if reldirname in whitelist:
+                    dirnames.remove(d)
+                    break
+            else:
+                break
 
         for f in filenames:
             if f[0] == '.' and f != '.htaccess':
@@ -195,12 +199,16 @@ def main():
     for dirpath, dirnames, filenames in os.walk(output_dir):
 
         # skip any directories specified in the whitelist
-        for d in dirnames:
-            dirname = os.path.join(dirpath, d)
-            reldirname = os.path.relpath(dirname, output_dir)
+        while True:
+            for d in dirnames:
+                dirname = os.path.join(dirpath, d)
+                reldirname = os.path.relpath(dirname, output_dir)
 
-            if reldirname in whitelist:
-                dirnames.remove(d)
+                if reldirname in whitelist:
+                    dirnames.remove(d)
+                    break
+            else:
+                break
 
         if len(filenames) == 0 and len(dirnames) == 0:
             try:
