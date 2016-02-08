@@ -48,8 +48,8 @@ def main():
 
     md = markdown.Markdown(**args)
     templ = Template(open(template_file).read())
-    today = datetime.datetime.now().strftime("%B %e, %Y")
-    footer = "Last modified on " + today + "."
+    today = datetime.datetime.now().strftime('%B %e, %Y')
+    footer = 'Last modified on ' + today + '.'
 
     num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
 
@@ -76,7 +76,7 @@ def main():
             path = os.path.join(dirpath, f)
             relpath = os.path.relpath(path, markdown_dir)
 
-            if executable(path):
+            if should_publish(path):
                 expected_files.append(relpath)
             else:
                 if relpath in cache:
@@ -92,9 +92,10 @@ def main():
             hash = compute_hash(infile)
 
             if relpath not in cache or cache[relpath] != hash:
-                if executable(path):
+                if should_publish(path):
                     cache[relpath] = hash
                 else:
+                    skipped(relpath)
                     num_skipped += 1
                     continue
             else:
@@ -240,6 +241,10 @@ def removed(msg):
     print('\033[35m[removed]\033[0m', msg)
 
 
+def skipped(msg):
+    print('\033[36m[skipped]\033[0m', msg)
+
+
 def get_cache(cache_file):
     cache = {}
 
@@ -291,9 +296,9 @@ def makedirs(dirpath):
             print("created directory '{}'".format(dirpath))
 
 
-def executable(f):
-    s = os.stat(f)
-    return s.st_mode & stat.S_IXUSR
+def should_publish(path):
+    filename = os.path.basename(path)
+    return filename[0] != '_'
 
 
 def copy_htaccess(path, output_dir):
