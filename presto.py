@@ -17,6 +17,7 @@ import mdx_grid_tables
 import pygments
 
 COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
+SHOW_SKIPPED = False
 
 def main():
     conf = configparser.ConfigParser()
@@ -242,7 +243,8 @@ def removed(msg):
 
 
 def skipped(msg):
-    print('\033[36m[skipped]\033[0m', msg)
+    if SHOW_SKIPPED:
+        print('\033[36m[skipped]\033[0m', msg)
 
 
 def get_cache(cache_file):
