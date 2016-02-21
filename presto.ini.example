@@ -16,7 +16,7 @@ partials_dir = partials
 ; path to directory that should contain the output HTML
 output_dir = output
 
-; path to an HTML file with $variables
+; path to an HTML file with {{ title }}, {{ body }}, {{ footer }}
 template_file = template.html
 
 ; path to cache file
