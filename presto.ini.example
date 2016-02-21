@@ -10,6 +10,9 @@
 ; path to directory storing Markdown files
 markdown_dir = drafts
 
+; path to directory storing partials
+partials_dir = partials
+
 ; path to directory that should contain the output HTML
 output_dir = output
 

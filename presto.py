@@ -1,37 +1,43 @@
 #!/usr/bin/env python3
 
+# built-in modules
 import sys
+import os
+import stat
+from configparser import ConfigParser
+import hashlib
+
+# local modules
+import process
 
 sys.path.append('lib')
 
-import os
-import stat
-import configparser
-import hashlib
-from string import Template
-import datetime
-import re
-
+# modules in local lib/ directory
 import markdown
 import mdx_grid_tables
 import pygments
 
-COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
 SHOW_SKIPPED = False
 
+
+conf = ConfigParser()
+conf.read('presto.ini')
+
+if 'presto' not in conf:
+    error('presto.ini could not be found, or no [presto] section found')
+    sys.exit(1)
+
+markdown_dir = conf['presto']['markdown_dir']
+partials_dir = conf['presto']['partials_dir']
+output_dir = conf['presto']['output_dir']
+template_file = conf['presto']['template_file']
+cache_file = conf['presto']['cache_file']
+whitelist = conf['presto']['whitelist']
+
+
 def main():
-    conf = configparser.ConfigParser()
-    conf.read('presto.ini')
-
-    if 'presto' not in conf:
-        error('presto.ini could not be found, or no [presto] section found')
-        sys.exit(1)
-
-    markdown_dir = conf['presto']['markdown_dir']
-    output_dir = conf['presto']['output_dir']
-    template_file = conf['presto']['template_file']
-    cache_file = conf['presto']['cache_file']
-    whitelist = conf['presto']['whitelist']
+    global markdown_dir, partials_dir, output_dir, template_file, \
+           cache_file, whitelist
 
     # post-process the whitelist: split on commas and remove extra spaces
     whitelist = [s.strip() for s in whitelist.split(',')]
@@ -48,9 +54,9 @@ def main():
             'lazy_ol': False}
 
     md = markdown.Markdown(**args)
-    templ = Template(open(template_file).read())
-    today = datetime.datetime.now().strftime('%B %e, %Y')
-    footer = 'Last modified on ' + today + '.'
+
+    with open(template_file, 'r') as f:
+        template = f.read()
 
     num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
 
@@ -110,23 +116,17 @@ def main():
                     num_published += 1
                 continue
 
-            content = infile.read()
-            cleaned = re.sub(COMMENT_PATTERN, '', content)
-            body_html = md.convert(cleaned)
+            html = process.md_to_html(md, template, infile)
 
-            if 'title' not in md.Meta:
-                error('{} has no title'.format(relpath))
+            if type(html) is tuple:
+                err_hash, err_msg = html
+
+                error('{}: {}'.format(err_msg, relpath))
 
                 # invalidate cache so this file is not skipped next time
-                cache[relpath] = 'bad-metadata'
+                cache[relpath] = err_hash
                 num_errors += 1
                 continue
-
-            html = templ.safe_substitute(
-                body=body_html,
-                title=md.Meta['title'][0],
-                footer=footer
-            )
 
             # create path to output directory
             output_path = os.path.join(
