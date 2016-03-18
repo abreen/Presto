@@ -141,6 +141,7 @@ def md_to_html(md, template_str, f):
     content = re.sub(ESCAPE_PATTERN, deescape, content)
 
     # convert body from Markdown to HTML
+    md.reset()
     content = md.convert(content)
 
     # substitute {{ title }}, {{ body }} and {{ footer }} in the template
