@@ -21,10 +21,25 @@ In your shell, run the `presto.sh` script with no arguments.
     files have been marked for publishing and have changed since last time.
     It will only update the HTML for those files.
 
-When a file is updated, the Markdown source is converted to HTML
-and placed inside an HTML template. Then the new HTML file is saved
-to the HTML output directory (`presto` uses the `output_dir` variable
-defined in the configuration file).
+A Markdown file is eligible for publishing if it does not begin with the
+characters `_`, `.`, or `#`. The common convention is to name files that
+you do not want to publish yet starting with `_`.
+
+To publish a file `presto` does the following (in this order):
+
+1.  Evaluates all `{{ ... }}` and `{% ... %}` sequences in the
+    Markdown file to obtain a new Markdown file
+    -   `{{ ... }}` sequences are replaced with the value of the
+        Python expression contained by them, and `{% ... %}`
+        sequences are replaced with the output produced by running
+        the code in the Python interpreter; see the examples for more
+2.  Converts the result of the previous step to HTML
+3.  Substitutes `{{ title }}`, `{{ head }}`, and `{{ footer }}` in the
+    template with values taken from the metadata
+4.  Places the HTML from the previous step where `{{ body }}` appears
+    in the template
+5.  This new HTML file is saved to the HTML output directory, specified
+    in the `output_dir` variable from the configuration file
 
 If any HTML is found in the Markdown file, it is preserved and written
 to the output HTML file. However, any HTML comments are removed from the
