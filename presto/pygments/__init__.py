@@ -34,7 +34,7 @@ __all__ = ['lex', 'format', 'highlight']
 
 import sys
 
-from pygments.util import StringIO, BytesIO
+from presto.pygments.util import StringIO, BytesIO
 
 
 def lex(code, lexer):

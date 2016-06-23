@@ -2,23 +2,30 @@
 blocks found in Markdown drafts. When a function is called, the Python
 interpreter's standard out stream is redirected to the Markdown file.
 """
+from __future__ import print_function, with_statement
+
 import sys
 import os
 
-import presto
+import presto.config as config
 
 
 def include_draft(path):
-    with open(presto.markdown_dir + os.sep + path, 'r') as f:
-        for line in f:
-            if line == '\n':
-                break
+    with open(config.get('markdown_dir') + os.sep + path, 'r') as f:
+        content = f.read().strip()
 
-        print(f.read().strip(), end='')
+    content = content.split('\n')
+
+    for i, line in enumerate(content):
+        if line == '':
+            break
+
+    rest = content[i + 1:]
+    print('\n'.join(rest), end='')
 
 
 def include_partial(path):
-    with open(presto.partials_dir + os.sep + path, 'r') as f:
+    with open(config.get('partials_dir') + os.sep + path, 'r') as f:
         print(f.read().strip(), end='')
 
 

@@ -52,8 +52,8 @@ http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables
 http://docutils.svn.sourceforge.net/viewvc/docutils/trunk/docutils/docutils/parsers/rst/tableparser.py?revision=7320&content-type=text%2Fplain
 """
 
-import markdown
-from markdown.util import etree
+import presto.markdown as markdown
+from presto.markdown.util import etree
 import re, string, pdb
 
 class GridTableExtension(markdown.Extension):

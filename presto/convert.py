@@ -1,14 +1,17 @@
-"""This module provides all the string processing & substitution
-functionality when a Markdown draft should be converted to HTML.
+"""This module provides all the string processing & substitution functionality
+when a Markdown draft should be converted to HTML.
 """
+from __future__ import print_function
+
 import sys
 import datetime
 import re
-from io import StringIO
 
-import functions
+from presto.six.moves import cStringIO
+import presto.functions as functions
 
 TITLE_PATTERN = re.compile(r'{{\s*title\s*}}')
+HEAD_PATTERN = re.compile(r'{{\s*head\s*}}')
 FOOTER_PATTERN = re.compile(r'{{\s*footer\s*}}')
 BODY_PATTERN = re.compile(r'{{\s*body\s*}}')
 
@@ -55,9 +58,9 @@ def md_to_html(md, template_str, f):
     # make the metadata for this Markdown draft available
     for var, val in metadata.items():
         if len(val) == 1:
-            globals_.update({var: val[0]})
+            globals_.update({var: str(val[0])})
         else:
-            globals_.update({var: val})
+            globals_.update({var: [str(s) for s in val]})
 
     # from top to bottom, evaluate {% ... %} and {{ ... }} sequences
     def sub(match):
@@ -71,7 +74,7 @@ def md_to_html(md, template_str, f):
         else:
             ws_before = ''
 
-        in_, out_ = StringIO(), StringIO()
+        in_, out_ = cStringIO(), cStringIO()
         sys.stdin = in_
         sys.stdout = out_
 
@@ -144,7 +147,7 @@ def md_to_html(md, template_str, f):
     md.reset()
     content = md.convert(content)
 
-    # substitute {{ title }}, {{ body }} and {{ footer }} in the template
+    # substitute {{ title }}, {{ head }}, {{ body }} and {{ footer }} in the template
 
     # why we use a function as the "repl" argument and not just the string:
     # if the page content contains substrings that look like backreferences
@@ -154,6 +157,14 @@ def md_to_html(md, template_str, f):
     content = re.sub(BODY_PATTERN, lambda _: content, template_str)
 
     content = re.sub(TITLE_PATTERN, metadata['title'][0], content)
+
+    if 'head' in metadata:
+        head_lines = '\n'.join(metadata['head'])
+    else:
+        head_lines = ''
+
+    content = re.sub(HEAD_PATTERN, head_lines, content)
+
     content = re.sub(FOOTER_PATTERN, FOOTER, content)
 
     return content

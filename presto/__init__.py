@@ -1,75 +1,62 @@
-#!/usr/bin/env python3
+from __future__ import print_function, with_statement
 
-# built-in modules
 import sys
 import os
+import io
 import stat
-from configparser import ConfigParser
 import hashlib
 
-# local modules
-import process
-
-sys.path.append('lib')
-
-# modules in local lib/ directory
-import markdown
-import mdx_grid_tables
-import pygments
-
-SHOW_SKIPPED = False
-
-
-conf = ConfigParser()
-conf.read('presto.ini')
-
-if 'presto' not in conf:
-    error('presto.ini could not be found, or no [presto] section found')
-    sys.exit(1)
-
-markdown_dir = conf['presto']['markdown_dir']
-partials_dir = conf['presto']['partials_dir']
-output_dir = conf['presto']['output_dir']
-template_file = conf['presto']['template_file']
-cache_file = conf['presto']['cache_file']
-whitelist = conf['presto']['whitelist']
+import presto.six as six
+import presto.output as output
+import presto.convert as convert
+import presto.markdown as markdown
+import presto.mdx_grid_tables as grid_tables
+import presto.config as config
 
 
 def main():
-    global markdown_dir, partials_dir, output_dir, template_file, \
-           cache_file, whitelist
-
     # post-process the whitelist: split on commas and remove extra spaces
-    whitelist = [s.strip() for s in whitelist.split(',')]
+    whitelist = [s.strip() for s in config.get('whitelist').split(',')]
 
     os.umask(0o002)
 
-    args = {'extensions': ['def_list', 'footnotes', 'meta', 'smarty',
-                           'headerid', 'tables', 'codehilite',
-                           'admonition', 'toc',
-                           mdx_grid_tables.GridTableExtension()],
+    extensions = [
+        'presto.markdown.extensions.def_list',
+        'presto.markdown.extensions.footnotes',
+        'presto.markdown.extensions.meta',
+        'presto.markdown.extensions.smarty',
+        'presto.markdown.extensions.headerid',
+        'presto.markdown.extensions.tables',
+        'presto.markdown.extensions.codehilite',
+        'presto.markdown.extensions.admonition',
+        'presto.markdown.extensions.toc',
+        grid_tables.GridTableExtension()
+    ]
 
-            'extension_configs': {'smarty': [('smart_ellipses', False)]},
-            'output_format': 'html5',
-            'lazy_ol': False}
+    args = {
+        'extensions': extensions,
+        'extension_configs': {'smarty': [('smart_ellipses', False)]},
+        'output_format': 'html5',
+        'lazy_ol': False
+    }
 
     md = markdown.Markdown(**args)
 
-    with open(template_file, 'r') as f:
+    with io.open(config.get('template_file'), 'r') as f:
         template = f.read()
 
     num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
 
     try:
-        cache = get_cache(cache_file)
-    except:
-        error('could not open cache file')
+        cache = get_cache(config.get('cache_file'))
+    except IOError:
+        output.error('could not open cache file')
         cache = {}
         num_errors += 1
 
     expected_files = []
 
-    for dirpath, dirnames, filenames in os.walk(markdown_dir):
+    for dirpath, dirnames, filenames in os.walk(config.get('markdown_dir')):
         for f in filenames:
             if '.markdown' not in f and f != 'htaccess':
                 continue
@@ -81,7 +68,7 @@ def main():
                 continue
 
             path = os.path.join(dirpath, f)
-            relpath = os.path.relpath(path, markdown_dir)
+            relpath = os.path.relpath(path, config.get('markdown_dir'))
 
             if should_publish(path):
                 expected_files.append(relpath)
@@ -90,9 +77,9 @@ def main():
                     del cache[relpath]
 
             try:
-                infile = open(path, mode='r', encoding='utf-8')
-            except PermissionError:
-                error("insufficient permission to read '{}'".format(relpath))
+                infile = io.open(path, mode='r', encoding='utf-8')
+            except:
+                output.error("unable to read '{}'".format(relpath))
                 num_errors += 1
                 continue
 
@@ -116,12 +103,12 @@ def main():
                     num_published += 1
                 continue
 
-            html = process.md_to_html(md, template, infile)
+            html = convert.md_to_html(md, template, infile)
 
             if type(html) is tuple:
                 err_hash, err_msg = html
 
-                error('{}: {}'.format(err_msg, relpath))
+                output.error('{}: {}'.format(err_msg, relpath))
 
                 # invalidate cache so this file is not skipped next time
                 cache[relpath] = err_hash
@@ -130,41 +117,41 @@ def main():
 
             # create path to output directory
             output_path = os.path.join(
-                output_dir,
+                config.get('output_dir'),
                 relpath.replace('.markdown', '.html')
             )
 
             try:
                 makedirs(os.path.dirname(output_path))
             except:
-                error("cannot make directories for '{}'".format(relpath))
+                output.error("cannot make directories for '{}'".format(relpath))
                 cache[relpath] = 'dirs-failed'
                 num_errors += 1
                 continue
 
             try:
-                with open(output_path, mode='w') as of:
+                with io.open(output_path, mode='w') as of:
                     of.write(html)
             except:
-                error("cannot write output file '{}'".format(relpath))
+                output.error("cannot write output file '{}'".format(relpath))
                 cache[relpath] = 'write-failed'
                 num_errors += 1
                 continue
 
             num_published += 1
-            published(relpath)
+            output.published(relpath)
 
             md.reset()
 
     # done publishing all HTML
     # now remove the HTML files for non-existent Markdown
-    for dirpath, dirnames, filenames in os.walk(output_dir):
+    for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
 
         # skip any directories specified in the whitelist
         while True:
             for d in dirnames:
                 dirname = os.path.join(dirpath, d)
-                reldirname = os.path.relpath(dirname, output_dir)
+                reldirname = os.path.relpath(dirname, config.get('output_dir'))
 
                 if reldirname in whitelist:
                     dirnames.remove(d)
@@ -177,7 +164,7 @@ def main():
                 continue
 
             path = os.path.join(dirpath, f)
-            relpath = os.path.relpath(path, output_dir)
+            relpath = os.path.relpath(path, config.get('output_dir'))
 
             head, tail = os.path.split(relpath)
             if f == '.htaccess':
@@ -192,19 +179,19 @@ def main():
                 try:
                     os.remove(path)
                     num_removed += 1
-                    removed(relpath)
-                except PermissionError:
-                    error("insufficient permissions removing '{}'".format(relpath))
+                    output.removed(relpath)
+                except:
+                    output.error("unable to remove '{}'".format(relpath))
                     num_errors += 1
 
     # make one more pass to remove any directories that are now empty
-    for dirpath, dirnames, filenames in os.walk(output_dir):
+    for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
 
         # skip any directories specified in the whitelist
         while True:
             for d in dirnames:
                 dirname = os.path.join(dirpath, d)
-                reldirname = os.path.relpath(dirname, output_dir)
+                reldirname = os.path.relpath(dirname, config.get('output_dir'))
 
                 if reldirname in whitelist:
                     dirnames.remove(d)
@@ -215,36 +202,19 @@ def main():
         if len(filenames) == 0 and len(dirnames) == 0:
             try:
                 os.rmdir(dirpath)
-                removed('empty directory ' + dirpath)
-            except PermissionError:
-                error("insufficient permissions removing directory '{}'".format(dirpath))
+                output.removed('empty directory ' + dirpath)
+            except:
+                output.error("unable to remove directory '{}'".format(dirpath))
 
-    try:
-        write_cache(cache, cache_file)
-    except:
-        error('could not write cache file')
-        num_errors += 1
+    #try:
+    write_cache(cache, config.get('cache_file'))
+    #except:
+    #    output.error('could not write cache file')
+    #    num_errors += 1
 
     print('{} published, {} errors, {} skipped, {} removed'.format(
         num_published, num_errors, num_skipped, num_removed
     ))
-
-
-def error(msg):
-    print('\033[31merror:\033[0m', msg, file=sys.stderr)
-
-
-def published(msg):
-    print('\033[32m[published]\033[0m', msg)
-
-
-def removed(msg):
-    print('\033[35m[removed]\033[0m', msg)
-
-
-def skipped(msg):
-    if SHOW_SKIPPED:
-        print('\033[36m[skipped]\033[0m', msg)
 
 
 def get_cache(cache_file):
@@ -253,7 +223,7 @@ def get_cache(cache_file):
     if not os.path.isfile(cache_file):
         return cache
 
-    with open(cache_file, mode='r') as f:
+    with io.open(cache_file, mode='r') as f:
         for line in f:
             tokens = line.split()
             cache[tokens[0]] = tokens[1]
@@ -262,9 +232,9 @@ def get_cache(cache_file):
 
 
 def write_cache(cache, cache_file):
-    with open(cache_file, mode='w') as f:
+    with io.open(cache_file, mode='w') as f:
         for (k, v) in cache.items():
-            f.write("{}\t{}\n".format(k, v))
+            f.write(six.u("{}\t{}\n".format(k, v)))
 
 
 def compute_hash(file):
@@ -320,8 +290,8 @@ def copy_htaccess(path, output_dir):
     was_here = os.path.isfile(output_path)
 
     try:
-        with open(path, mode='r') as htfile:
-            with open(output_path, mode='w') as of:
+        with io.open(path, mode='r') as htfile:
+            with io.open(output_path, mode='w') as of:
                 of.write(htfile.read())
     except:
         error("could not create htaccess '{}'".format(output_path))
@@ -335,7 +305,3 @@ def copy_htaccess(path, output_dir):
     os.umask(old_umask)
     print("created htaccess file '{}'".format(output_path))
     return True
-
-
-if __name__ == '__main__':
-    main()

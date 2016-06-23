@@ -1,4 +1,5 @@
 title: Advanced Presto features
+head: <script type="text/javascript" src="foo.js"></script>
 foo: bar
 bar: one
      two

@@ -1,6 +1,7 @@
 cache
 drafts
 template.html
+presto.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
