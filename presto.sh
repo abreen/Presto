@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PYTHONS='python python3'
+PYTHONS='python3 python'
 
 for p in $PYTHONS; do
     pypath=$(which $p)
