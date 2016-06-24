@@ -1,6 +1,7 @@
 cache
 drafts/
 partials/
+output/
 template.html
 presto.ini
 
