@@ -7,7 +7,8 @@ import sys
 import datetime
 import re
 
-from presto.six.moves import cStringIO
+from six.moves import cStringIO
+
 import presto.functions as functions
 
 TITLE_PATTERN = re.compile(r'{{\s*title\s*}}')

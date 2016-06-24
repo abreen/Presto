@@ -1,6 +1,7 @@
 import sys
 
-from presto.six.moves import configparser
+from six.moves import configparser
+
 from presto.output import error
 
 

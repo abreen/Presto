@@ -6,11 +6,12 @@ import io
 import stat
 import hashlib
 
-import presto.six as six
+import markdown
+import mdx_grid_tables as grid_tables
+import six
+
 import presto.output as output
 import presto.convert as convert
-import presto.markdown as markdown
-import presto.mdx_grid_tables as grid_tables
 import presto.config as config
 
 
@@ -110,15 +111,15 @@ whitelist = [s.strip() for s in config.get('whitelist').split(',')]
 os.umask(0o002)
 
 extensions = [
-    'presto.markdown.extensions.def_list',
-    'presto.markdown.extensions.footnotes',
-    'presto.markdown.extensions.meta',
-    'presto.markdown.extensions.smarty',
-    'presto.markdown.extensions.headerid',
-    'presto.markdown.extensions.tables',
-    'presto.markdown.extensions.codehilite',
-    'presto.markdown.extensions.admonition',
-    'presto.markdown.extensions.toc',
+    'def_list',
+    'footnotes',
+    'meta',
+    'smarty',
+    'headerid',
+    'tables',
+    'codehilite',
+    'admonition',
+    'toc',
     grid_tables.GridTableExtension()
 ]
 
