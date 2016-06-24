@@ -10,6 +10,7 @@ _conf.read('presto.ini')
 
 if not _conf.has_section('presto'):
     error('presto.ini could not be found, or no [presto] section found')
+    sys.exit(1)
 
 def get(var):
     return _conf.get('presto', var)

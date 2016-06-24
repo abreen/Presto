@@ -179,7 +179,7 @@ for dirpath, dirnames, filenames in os.walk(config.get('markdown_dir')):
             if should_publish(path):
                 cache[relpath] = hash
             else:
-                skipped(relpath)
+                output.skipped(relpath)
                 num_skipped += 1
                 continue
         else:
