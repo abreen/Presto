@@ -2,15 +2,17 @@ import sys
 
 from six.moves import configparser
 
-from presto.output import error
-
 
 _conf = configparser.ConfigParser()
-_conf.read('presto.ini')
 
-if not _conf.has_section('presto'):
+if _conf.read('presto.ini') and not _conf.has_section('presto'):
     error('presto.ini could not be found, or no [presto] section found')
-    sys.exit(1)
+    _conf.add_section('presto')
 
-def get(var):
-    return _conf.get('presto', var)
+
+def get(name):
+    if _conf.has_option('presto', name):
+        return _conf.get('presto', name)
+
+def set(name, value):
+    _conf.set('presto', name, value)
