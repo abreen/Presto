@@ -81,7 +81,7 @@ def copy_htaccess(path, output_dir):
     try:
         makedirs(os.path.dirname(output_path))
     except:
-        error("cannot make directories for htaccess '{}'".format(output_path))
+        output.error("cannot make directories for htaccess '{}'".format(output_path))
         os.umask(old_umask)
         return False
 
@@ -92,7 +92,7 @@ def copy_htaccess(path, output_dir):
             with io.open(output_path, mode='w') as of:
                 of.write(htfile.read())
     except:
-        error("could not create htaccess '{}'".format(output_path))
+        output.error("could not create htaccess '{}'".format(output_path))
         os.umask(old_umask)
         return False
 
@@ -105,8 +105,17 @@ def copy_htaccess(path, output_dir):
     return True
 
 
+def config_get(name):
+    value = config.get(name)
+    if value is None:
+        output.error('no value for required configuration variable "{}"'.format(name))
+        sys.exit(1)
+    else:
+        return value
+
+
 # post-process the whitelist: split on commas and remove extra spaces
-whitelist = [s.strip() for s in config.get('whitelist').split(',')]
+whitelist = [s.strip() for s in config_get('whitelist').split(',')]
 
 os.umask(0o002)
 
@@ -132,13 +141,13 @@ args = {
 
 md = markdown.Markdown(**args)
 
-with io.open(config.get('template_file'), 'r') as f:
+with io.open(config_get('template_file'), 'r') as f:
     template = f.read()
 
 num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
 
 try:
-    cache = get_cache(config.get('cache_file'))
+    cache = get_cache(config_get('cache_file'))
 except IOError:
     output.error('could not open cache file')
     cache = {}
@@ -146,7 +155,7 @@ except IOError:
 
 expected_files = []
 
-for dirpath, dirnames, filenames in os.walk(config.get('markdown_dir')):
+for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
     for f in filenames:
         if '.markdown' not in f and f != 'htaccess':
             continue
@@ -158,7 +167,7 @@ for dirpath, dirnames, filenames in os.walk(config.get('markdown_dir')):
             continue
 
         path = os.path.join(dirpath, f)
-        relpath = os.path.relpath(path, config.get('markdown_dir'))
+        relpath = os.path.relpath(path, config_get('markdown_dir'))
 
         if should_publish(path):
             expected_files.append(relpath)
@@ -207,7 +216,7 @@ for dirpath, dirnames, filenames in os.walk(config.get('markdown_dir')):
 
         # create path to output directory
         output_path = os.path.join(
-            config.get('output_dir'),
+            config_get('output_dir'),
             relpath.replace('.markdown', '.html')
         )
 
@@ -235,13 +244,13 @@ for dirpath, dirnames, filenames in os.walk(config.get('markdown_dir')):
 
 # done publishing all HTML
 # now remove the HTML files for non-existent Markdown
-for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
+for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
 
     # skip any directories specified in the whitelist
     while True:
         for d in dirnames:
             dirname = os.path.join(dirpath, d)
-            reldirname = os.path.relpath(dirname, config.get('output_dir'))
+            reldirname = os.path.relpath(dirname, config_get('output_dir'))
 
             if reldirname in whitelist:
                 dirnames.remove(d)
@@ -254,7 +263,7 @@ for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
             continue
 
         path = os.path.join(dirpath, f)
-        relpath = os.path.relpath(path, config.get('output_dir'))
+        relpath = os.path.relpath(path, config_get('output_dir'))
 
         head, tail = os.path.split(relpath)
         if f == '.htaccess':
@@ -275,13 +284,13 @@ for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
                 num_errors += 1
 
 # make one more pass to remove any directories that are now empty
-for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
+for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
 
     # skip any directories specified in the whitelist
     while True:
         for d in dirnames:
             dirname = os.path.join(dirpath, d)
-            reldirname = os.path.relpath(dirname, config.get('output_dir'))
+            reldirname = os.path.relpath(dirname, config_get('output_dir'))
 
             if reldirname in whitelist:
                 dirnames.remove(d)
@@ -297,7 +306,7 @@ for dirpath, dirnames, filenames in os.walk(config.get('output_dir')):
             output.error("unable to remove directory '{}'".format(dirpath))
 
 try:
-    write_cache(cache, config.get('cache_file'))
+    write_cache(cache, config_get('cache_file'))
 except:
     output.error('could not write cache file')
     num_errors += 1
