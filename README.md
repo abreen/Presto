@@ -62,7 +62,8 @@ output file.
 
 The configuration `.ini` file contains the locations where Presto can
 find Markdown sources, partials, the template file, and the HTML output
-directory.
+directory. It also has an optional section specifying variables that
+are globally available to any `{`-sequence.
 
 
 ## `{`-sequences
