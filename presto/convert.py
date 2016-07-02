@@ -19,6 +19,10 @@ ESCAPE_PATTERN = re.compile(r'\\([{}~=!])')
 COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
 
 
+class BracketError(ValueError):
+    pass
+
+
 def eval_brackets(s, errors, locals_, globals_):
     def sub(match):
         ws_before = match.group(1)
@@ -54,7 +58,7 @@ def eval_brackets(s, errors, locals_, globals_):
                 if options.get('use_empty'):
                     return ''
                 else:
-                    raise ValueError
+                    raise BracketError
 
             sys.stdin = sys.__stdin__
             sys.stdout = sys.__stdout__
@@ -86,7 +90,7 @@ def eval_brackets(s, errors, locals_, globals_):
                 if options.get('use_empty'):
                     return ''
                 else:
-                    raise ValueError
+                    raise BracketError
 
                 return ''
 
@@ -106,7 +110,7 @@ def eval_brackets(s, errors, locals_, globals_):
     # from top to bottom, evaluate {-sequences using above function
     try:
         s_evald = re.sub(BRACE_PATTERN, sub, s)
-    except ValueError:
+    except BracketError:
         return None
 
     return s_evald
