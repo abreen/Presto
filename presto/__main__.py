@@ -121,6 +121,8 @@ def config_get(name):
         return value
 
 
+config.load()
+
 # post-process the whitelist: split on commas and remove extra spaces
 whitelist = [s.strip() for s in config_get('whitelist').split(',')]
 
