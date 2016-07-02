@@ -2,7 +2,7 @@ import sys
 import argparse
 
 
-_parser = argparse.ArgumentParser()
+_parser = argparse.ArgumentParser(prog='presto')
 _parser.add_argument(
     '-e', '--use-empty',
     action='store_true',
