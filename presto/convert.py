@@ -12,28 +12,14 @@ from six.moves import cStringIO
 
 import presto.functions as functions
 import presto.options as options
+import presto.config as config
 
 BRACE_PATTERN = re.compile(r'(\n[ \t]*)?{([~=!])(.*?)\2}', re.DOTALL)
 ESCAPE_PATTERN = re.compile(r'\\([{}~=!])')
 COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
 
 
-def eval_brackets(s, metadata, locals_=None, globals_=None):
-    if locals_ is None:
-        locals_ = {}
-
-    if globals_ is None:
-        globals_ = {}
-
-    errors = []
-
-    # make the functions in the functions module available
-    globals_.update(get_functions(functions))
-
-    # make the metadata for this Markdown draft available
-    for var, val in metadata.items():
-        globals_.update({var: val})
-
+def eval_brackets(s, errors, locals_, globals_):
     def sub(match):
         ws_before = match.group(1)
         kind = match.group(2)
@@ -121,9 +107,9 @@ def eval_brackets(s, metadata, locals_=None, globals_=None):
     try:
         s_evald = re.sub(BRACE_PATTERN, sub, s)
     except ValueError:
-        return errors, None, locals_, globals_
+        return None
 
-    return errors, s_evald, locals_, globals_
+    return s_evald
 
 
 def md_to_html(md, template_str, f):
@@ -156,7 +142,21 @@ def md_to_html(md, template_str, f):
         else:
             new_metadata.update({var: [str(s) for s in val]})
 
-    errors, body_md_evald, locals_, globals_ = eval_brackets(body_md, new_metadata)
+    globals_ = {}
+    locals_ = {}
+    errors = []
+
+    # make the variables defined in the config file available
+    globals_.update(config.get_variables())
+
+    # make the functions in the functions module available
+    globals_.update(get_functions(functions))
+
+    # make the metadata for this Markdown draft available
+    for var, val in new_metadata.items():
+        globals_.update({var: val})
+
+    body_md_evald = eval_brackets(body_md, errors, globals_, locals_)
 
     if body_md_evald is None:
         return None, errors
@@ -165,9 +165,9 @@ def md_to_html(md, template_str, f):
     md.reset()
     body_html = md.convert(body_md_evald)
 
-    new_metadata['content'] = body_html
+    globals_.update({'content': body_html})
 
-    errors, page_evald, _, _ = eval_brackets(template_str, new_metadata, locals_, globals_)
+    page_evald = eval_brackets(template_str, errors, globals_, locals_)
 
     if page_evald is None:
         return None, errors
