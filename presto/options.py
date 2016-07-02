@@ -21,5 +21,4 @@ _args = vars(_parser.parse_args())
 
 
 def get(name):
-    if name in _args:
-        return _args[name]
+    return _args.get(name, None)
