@@ -52,7 +52,6 @@ def makedirs(dirpath):
     produce an error if any intermediate directories exist or have modes
     not matching the 'mode' parameter.
     """
-
     head, tail = os.path.split(dirpath)
     if tail == '':
         # root directory or current relative root has been reached
@@ -202,7 +201,8 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             if should_publish(path):
                 cache[relpath] = hash
             else:
-                output.skipped(relpath)
+                if not options.get('hide_skipped'):
+                    output.skipped(relpath)
                 num_skipped += 1
                 continue
         else:
@@ -210,10 +210,16 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             continue
 
         if f == 'htaccess':
-            if not copy_htaccess(path, config_get('output_dir')):
-                num_errors += 1
+            if options.get('dry_run'):
+                success = True
             else:
+                success = copy_htaccess(path, config_get('output_dir'))
+
+            if success:
                 num_published += 1
+            else:
+                num_errors += 1
+
             continue
 
         html, errors = convert.md_to_html(md, template, infile)
@@ -235,7 +241,8 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
         )
 
         try:
-            makedirs(os.path.dirname(output_path))
+            if not options.get('dry_run'):
+                makedirs(os.path.dirname(output_path))
         except:
             if options.get('debug'):
                 output.traceback()
@@ -246,8 +253,9 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             continue
 
         try:
-            with io.open(output_path, mode='w') as of:
-                of.write(html)
+            if not options.get('dry_run'):
+                with io.open(output_path, mode='w') as of:
+                    of.write(html)
         except:
             if options.get('debug'):
                 output.traceback()
@@ -295,7 +303,9 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
             cache.pop(relpath, None)
 
             try:
-                os.remove(path)
+                if not options.get('dry_run'):
+                    os.remove(path)
+
                 num_removed += 1
                 output.removed(relpath)
             except:
@@ -322,7 +332,8 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
 
     if len(filenames) == 0 and len(dirnames) == 0:
         try:
-            os.rmdir(dirpath)
+            if not options.get('dry_run'):
+                os.rmdir(dirpath)
             output.removed('empty directory ' + dirpath)
         except:
             if options.get('debug'):
@@ -331,7 +342,8 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
             output.error("unable to remove directory '{}'".format(dirpath))
 
 try:
-    write_cache(cache, config_get('cache_file'))
+    if not options.get('dry_run'):
+        write_cache(cache, config_get('cache_file'))
 except:
     if options.get('debug'):
         output.traceback()

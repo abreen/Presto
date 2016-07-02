@@ -12,6 +12,16 @@ _parser.add_argument(
     help='use empty string for {-sequences that produce errors'
 )
 _parser.add_argument(
+    '--hide-skipped',
+    action='store_true',
+    help='do not print the names of files that were skipped'
+)
+_parser.add_argument(
+    '--dry-run',
+    action='store_true',
+    help='do not actually change any files, just show what would be done'
+)
+_parser.add_argument(
     '--debug',
     action='store_true',
     help='print tracebacks when exceptions occur, for debugging'
