@@ -7,6 +7,7 @@ import sys
 import datetime
 import re
 
+from six import exec_
 from six.moves import cStringIO
 
 import presto.functions as functions
@@ -53,7 +54,7 @@ def eval_brackets(s, metadata, locals_=None, globals_=None):
             inner = dedent(inner, len(ws_before))
 
             try:
-                exec(inner, globals_, locals_)
+                exec_(inner, globals_, locals_)
             except Exception as e:
                 sys.stdin = sys.__stdin__
                 sys.stdout = sys.__stdout__
