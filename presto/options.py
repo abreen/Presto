@@ -2,7 +2,10 @@ import sys
 import argparse
 
 
-_parser = argparse.ArgumentParser(prog='presto')
+_parser = argparse.ArgumentParser(
+    prog='presto',
+    description='Static website publisher that generates HTML from Markdown'
+)
 _parser.add_argument(
     '-e', '--use-empty',
     action='store_true',
