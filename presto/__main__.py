@@ -13,6 +13,7 @@ import six
 import presto.output as output
 import presto.convert as convert
 import presto.config as config
+import presto.options as options
 
 
 def get_cache(cache_file):
@@ -81,6 +82,9 @@ def copy_htaccess(path, output_dir):
     try:
         makedirs(os.path.dirname(output_path))
     except:
+        if options.get('debug'):
+            output.traceback()
+
         output.error("cannot make directories for htaccess '{}'".format(output_path))
         os.umask(old_umask)
         return False
@@ -92,6 +96,9 @@ def copy_htaccess(path, output_dir):
             with io.open(output_path, mode='w') as of:
                 of.write(htfile.read())
     except:
+        if options.get('debug'):
+            output.traceback()
+
         output.error("could not create htaccess '{}'".format(output_path))
         os.umask(old_umask)
         return False
@@ -148,7 +155,10 @@ num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
 
 try:
     cache = get_cache(config_get('cache_file'))
-except IOError:
+except:
+    if options.get('debug'):
+        output.traceback()
+
     output.error('could not open cache file')
     cache = {}
     num_errors += 1
@@ -178,6 +188,9 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
         try:
             infile = io.open(path, mode='r', encoding='utf-8')
         except:
+            if options.get('debug'):
+                output.traceback()
+
             output.error("unable to read '{}'".format(relpath))
             num_errors += 1
             continue
@@ -202,17 +215,20 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
                 num_published += 1
             continue
 
-        html = convert.md_to_html(md, template, infile)
+        html, errors = convert.md_to_html(md, template, infile)
 
-        if type(html) is tuple:
-            err_hash, err_msg = html
+        if errors:
+            for err in errors:
+                output.error('{}: {}'.format(relpath, err))
+                num_errors += 1
 
-            output.error('{}: {}'.format(err_msg, relpath))
+            if not options.get('use_empty'):
+                # invalidate cache so this file is not skipped next time
+                if relpath in cache:
+                    del cache[relpath]
 
-            # invalidate cache so this file is not skipped next time
-            cache[relpath] = err_hash
-            num_errors += 1
-            continue
+                num_skipped += 1
+                continue
 
         # create path to output directory
         output_path = os.path.join(
@@ -223,6 +239,9 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
         try:
             makedirs(os.path.dirname(output_path))
         except:
+            if options.get('debug'):
+                output.traceback()
+
             output.error("cannot make directories for '{}'".format(relpath))
             cache[relpath] = 'dirs-failed'
             num_errors += 1
@@ -232,6 +251,9 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             with io.open(output_path, mode='w') as of:
                 of.write(html)
         except:
+            if options.get('debug'):
+                output.traceback()
+
             output.error("cannot write output file '{}'".format(relpath))
             cache[relpath] = 'write-failed'
             num_errors += 1
@@ -280,6 +302,9 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
                 num_removed += 1
                 output.removed(relpath)
             except:
+                if options.get('debug'):
+                    output.traceback()
+
                 output.error("unable to remove '{}'".format(relpath))
                 num_errors += 1
 
@@ -303,14 +328,20 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
             os.rmdir(dirpath)
             output.removed('empty directory ' + dirpath)
         except:
+            if options.get('debug'):
+                output.traceback()
+
             output.error("unable to remove directory '{}'".format(dirpath))
 
 try:
     write_cache(cache, config_get('cache_file'))
 except:
+    if options.get('debug'):
+        output.traceback()
+
     output.error('could not write cache file')
     num_errors += 1
 
-print('{} published, {} errors, {} skipped, {} removed'.format(
-    num_published, num_errors, num_skipped, num_removed
+print('{} files published, {} files skipped, {} files removed; {} errors'.format(
+    num_published, num_skipped, num_removed, num_errors
 ))

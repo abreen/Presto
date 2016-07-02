@@ -10,47 +10,20 @@ import re
 from six.moves import cStringIO
 
 import presto.functions as functions
+import presto.options as options
 
-TITLE_PATTERN = re.compile(r'{{\s*title\s*}}')
-HEAD_PATTERN = re.compile(r'{{\s*head\s*}}')
-FOOTER_PATTERN = re.compile(r'{{\s*footer\s*}}')
-BODY_PATTERN = re.compile(r'{{\s*body\s*}}')
-
-BRACE_PATTERN = re.compile(r'(\n[ \t]*)?{([{%])(.*?)[%}]}', re.DOTALL)
-ESCAPE_PATTERN = re.compile(r'\\({|}|%)')
+BRACE_PATTERN = re.compile(r'(\n[ \t]*)?{([~=!])(.*?)\2}', re.DOTALL)
+ESCAPE_PATTERN = re.compile(r'\\([{}~=!])')
 COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
 
-TODAY = datetime.datetime.now().strftime('%B %e, %Y')
-FOOTER = 'Last modified on ' + TODAY + '.'
 
+def eval_brackets(s, metadata, locals_=None, globals_=None):
+    if locals_ is None:
+        locals_ = {}
 
-def md_to_html(md, template_str, f):
-    """Given a markdown.Markdown object, a string containing an HTML template,
-    and a file object open for reading that corresponds to a file containing
-    Markdown (with {% ... %} and/or {{ ... }} sequences), return an HTML string
-    with the Markdown elements converted to HTML and the code within {% ... %}
-    and {{ ... }} blocks evaluated.
-    """
-    content = f.read()
+    if globals_ is None:
+        globals_ = {}
 
-    # remove all HTML comments
-    content = re.sub(COMMENT_PATTERN, '', content)
-
-    # convert using the markdown.Markdown object, just to obtain metadata
-    md.convert(content)
-    metadata = md.Meta
-
-    if 'title' not in metadata:
-        return ('bad-metadata', 'draft has no title')
-
-    if 'path' in metadata:
-        # add directories to the Python module search path, so import
-        # statements in {% ... %} sequences can work
-        for d in metadata['path']:
-            sys.path.append(d)
-
-    locals_ = {}
-    globals_ = {}
     errors = []
 
     # make the functions in the functions module available
@@ -58,12 +31,8 @@ def md_to_html(md, template_str, f):
 
     # make the metadata for this Markdown draft available
     for var, val in metadata.items():
-        if len(val) == 1:
-            globals_.update({var: str(val[0])})
-        else:
-            globals_.update({var: [str(s) for s in val]})
+        globals_.update({var: val})
 
-    # from top to bottom, evaluate {% ... %} and {{ ... }} sequences
     def sub(match):
         ws_before = match.group(1)
         kind = match.group(2)
@@ -79,24 +48,26 @@ def md_to_html(md, template_str, f):
         sys.stdin = in_
         sys.stdout = out_
 
-        if kind == '%':
+        if kind == '!':
             # code block
             inner = dedent(inner, len(ws_before))
 
             try:
                 exec(inner, globals_, locals_)
-            except:
+            except Exception as e:
                 sys.stdin = sys.__stdin__
                 sys.stdout = sys.__stdout__
 
                 import traceback
-                traceback.print_exc()
+                e_type, e_value, e_tb = sys.exc_info()
+                e_str = traceback.format_exception(e_type, e_value, None, 0)[0].strip()
 
-                errors.append(
-                    ('%-error', 'error occurred evaluating {% ... %}')
-                )
+                errors.append('error occurred executing {! ... !}: ' + e_str)
 
-                return ''
+                if options.get('use_empty'):
+                    return ''
+                else:
+                    raise ValueError
 
             sys.stdin = sys.__stdin__
             sys.stdout = sys.__stdout__
@@ -106,69 +77,107 @@ def md_to_html(md, template_str, f):
             else:
                 return indent(out_.getvalue(), ws_before)
 
-        else: # kind == '{'
-            # eval of a function call/variable
+        elif kind in ['~', '=']:
+            # evaluating an expression
             inner = inner.strip()
 
             try:
                 rv = eval(inner, globals_, locals_)
-            except:
+            except Exception as e:
                 sys.stdin = sys.__stdin__
                 sys.stdout = sys.__stdout__
 
                 import traceback
-                traceback.print_exc()
+                e_type, e_value, e_tb = sys.exc_info()
+                e_str = traceback.format_exception(e_type, e_value, None, 0)[0].strip()
 
-                errors.append(
-                    ('{-error', 'error occurred evaluating {{ ... }}')
-                )
+                if kind == '~':
+                    errors.append('error occurred evaluating {~ ... ~}: ' + e_str)
+                elif kind == '=':
+                    errors.append('error occurred evaluating {= ... =}: ' + e_str)
+
+                if options.get('use_empty'):
+                    return ''
+                else:
+                    raise ValueError
 
                 return ''
 
             sys.stdin = sys.__stdin__
             sys.stdout = sys.__stdout__
 
+            if kind == '~':
+                str_out = repr(rv)
+            elif kind == '=':
+                str_out = str(rv)
+
             if ws_before:
-                return '\n' + ws_before + repr(rv)
+                return '\n' + ws_before + str_out
             else:
-                return repr(rv)
+                return str_out
 
-    content = re.sub(BRACE_PATTERN, sub, content)
+    # from top to bottom, evaluate {-sequences using above function
+    try:
+        s_evald = re.sub(BRACE_PATTERN, sub, s)
+    except ValueError:
+        return errors, None, locals_, globals_
 
-    if errors:
-        return errors[0]
+    return errors, s_evald, locals_, globals_
 
-    # replace occurrences of '\{', '\}' and '\%' with just '{', etc.
-    def deescape(match):
-        return match.group(1)
 
-    content = re.sub(ESCAPE_PATTERN, deescape, content)
+def md_to_html(md, template_str, f):
+    """Given a markdown.Markdown object, a string containing an HTML template,
+    and a file object open for reading that corresponds to a file containing
+    Markdown (with {-sequences), return an HTML string with the Markdown
+    elements converted to HTML and the code within the {-sequences executed.
+    """
+    body_md = f.read()
+
+    # remove all HTML comments
+    body_md = re.sub(COMMENT_PATTERN, '', body_md)
+
+    # convert using the markdown.Markdown object, just to obtain metadata
+    md.convert(body_md)
+    metadata = md.Meta
+
+    if 'path' in metadata:
+        # add directories to the Python module search path, so import
+        # statements in {%-sequences can work
+        for d in metadata['path']:
+            sys.path.append(d)
+
+    # make sure all the items in the metadata are either strings or lists of
+    # strings by calling str(): fixes problems with unicode() in Python 2
+    new_metadata = {}
+    for var, val in metadata.items():
+        if len(val) == 1:
+            new_metadata.update({var: str(val[0])})
+        else:
+            new_metadata.update({var: [str(s) for s in val]})
+
+    errors, body_md_evald, locals_, globals_ = eval_brackets(body_md, new_metadata)
+
+    if body_md_evald is None:
+        return None, errors
 
     # convert body from Markdown to HTML
     md.reset()
-    content = md.convert(content)
+    body_html = md.convert(body_md_evald)
 
-    # substitute {{ title }}, {{ head }}, {{ body }} and {{ footer }} in the template
+    new_metadata['content'] = body_html
 
-    # why we use a function as the "repl" argument and not just the string:
-    # if the page content contains substrings that look like backreferences
-    # (e.g., \1) or group references (\gfoo), this can mess up the
-    # substitution; by using a function instead, the string we return as a
-    # replacement will not be scanned for these substrings
-    content = re.sub(BODY_PATTERN, lambda _: content, template_str)
+    errors, page_evald, _, _ = eval_brackets(template_str, new_metadata, locals_, globals_)
 
-    content = re.sub(TITLE_PATTERN, metadata['title'][0], content)
+    if page_evald is None:
+        return None, errors
 
-    if 'head' in metadata:
-        head_lines = '\n'.join(metadata['head'])
-    else:
-        head_lines = ''
+    # remove backslash from occurrences of '\{', '\}', etc.
+    def deescape(match):
+        return match.group(1)
 
-    content = re.sub(HEAD_PATTERN, head_lines, content)
+    page_evald_deescaped = re.sub(ESCAPE_PATTERN, deescape, page_evald)
 
-    content = re.sub(FOOTER_PATTERN, FOOTER, content)
-
-    return content
+    return page_evald_deescaped, errors
 
 
 def get_functions(mod):

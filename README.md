@@ -32,7 +32,7 @@ will exist for the life of that command. For example, in Bash:
 If you'd like, you can alias the command `presto` to this string in your
 shell's configuration file, to save you typing. For example, in Bash:
 
-    alias presto="PYTHONPATH=/Users/abreen/.../git/presto python -m presto"
+    alias presto="PYTHONPATH=/Users/abreen/git/presto python -m presto"
 
 
 ## What it does
@@ -43,17 +43,13 @@ When you invoke `presto` with no command line arguments, it does the following:
 2.  Determines which Markdown files have been marked for publishing and have
     changed since the last time `presto` was run
 3.  Then, for each file to publish:
-    *   Evaluates all `{{ ... }}` and `{% ... %}` sequences in the
-        Markdown file to obtain a new Markdown file
-        -   `{{ ... }}` sequences are replaced with the value of the
-            Python expression contained by them, and `{% ... %}`
-            sequences are replaced with the output produced by running
-            the code in the Python interpreter; see the examples for more
+    *   Evaluates all `{`-sequences in the Markdown file to obtain a new
+        Markdown file (see below)
     *   Converts the result of the previous step to HTML
-    *   Substitutes `{{ title }}`, `{{ head }}`, and `{{ footer }}` in the
-        template with values taken from the metadata
-    *   Places the HTML from the previous step where `{{ body }}` appears
-        in the template
+    *   Evaluates the `{`-sequences in the template file using data from the
+        Markdown file's metadata and its Python namespace
+        -   The `{= content =}` sequence is replaced with the
+            page's generated HTML
     *   Saves the new HTML file to the HTML output directory
 
 A Markdown file is eligible for publishing if it does not begin with the
@@ -69,14 +65,60 @@ find Markdown sources, partials, the template file, and the HTML output
 directory.
 
 
+## `{`-sequences
+
+*For more detail and a working example, see the examples directory.*
+
+`presto` interprets content starting and ending with curly braces (`{` and `}`)
+specially (called `{`-sequences). `presto` substitutes `{`-sequences with the
+content it derives from expressions or code inside them.
+
+There are three kinds of `{`-sequences: see the list below. In the
+following, `<expr>` stands for any Python expression, and `<stmt>` for any
+Python statement.
+
+*   `{~ <expr> ~}` is replaced with the representation of the
+    expression. That is, the expression is evaluated using the Python
+    interpreter, and the result of calling `repr()` on the expression is
+    sent to the page, starting wherever the `{~`-sequence begins.
+
+*   `{= <expr> =}` is just like `{= <expr> =}`, except that `str()` is
+    called on the expression instead of `repr()`. This means that the
+    expression can reduce to a string, and the content of the string
+    can be sent to the page (without Python adding `'` or `"` around
+    the content).
+
+*   In `{! <stmt1>; <stmt2>; ... <stmtN> !}`, each statement is executed
+    as it would be in a normal Python program, and the *output* of the
+    entire code block is sent to the page. Using semicolons is valid Python
+    syntax for separating statements, despite not being colloquial.
+    However, a `{!`-sequence can span multiple lines, as in the following:
+
+        {!
+        a = 10
+        b = 20
+        print(a)
+        print(b)
+        !}
+
+    `presto` will ensure that the output is indented to the same level as the
+    opening `{!`, if the output contains multiple lines (as it does in this
+    example).
+
+When evaluating `{`-sequences, `presto` uses the Python interpreter running it
+to reduce the expressions or capture output. This means that you should use
+Python syntax appropriate to the interpreter you will use to run `presto`.
+Any variables/functions defined in earlier `{!`-sequences can be used in later
+sequences, since `presto` evaluates them top-to-bottom.
+
+If you need to send a literal `{~` to the page, escape the characters with
+backslashes: write `\{\~` or `\{~` instead.
+
+
 ## Notes
 
 *   If you want to force `presto` to rewrite all HTML (if, for example,
     you changed the `template.html` file), just delete the cache file.
-*   Markdown sources must have a metadata section with at least `title`
-    defined, for the page title. You can also define your own metadata
-    variables and use them in the Markdown using `{{ ... }}` or `{% ... %}`
-    sequences. See the examples.
 
 
 ## Author

@@ -17,3 +17,8 @@ def removed(msg):
 
 def skipped(msg):
     print('\033[36m[skipped]\033[0m', msg)
+
+
+def traceback():
+    import traceback
+    traceback.print_exc()
