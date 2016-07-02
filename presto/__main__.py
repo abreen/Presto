@@ -182,8 +182,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
         if should_publish(path):
             expected_files.append(relpath)
         else:
-            if relpath in cache:
-                del cache[relpath]
+            cache.pop(relpath, None)
 
         try:
             infile = io.open(path, mode='r', encoding='utf-8')
@@ -223,10 +222,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
                 num_errors += 1
 
             if not options.get('use_empty'):
-                # invalidate cache so this file is not skipped next time
-                if relpath in cache:
-                    del cache[relpath]
-
+                cache.pop(relpath, None)
                 num_skipped += 1
                 continue
 
@@ -243,7 +239,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
                 output.traceback()
 
             output.error("cannot make directories for '{}'".format(relpath))
-            cache[relpath] = 'dirs-failed'
+            cache.pop(relpath, None)
             num_errors += 1
             continue
 
@@ -255,7 +251,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
                 output.traceback()
 
             output.error("cannot write output file '{}'".format(relpath))
-            cache[relpath] = 'write-failed'
+            cache.pop(relpath, None)
             num_errors += 1
             continue
 
@@ -294,8 +290,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
             relpath = os.path.join(head, f.replace('.html', '.markdown'))
 
         if relpath not in expected_files:
-            if relpath in cache:
-                del cache[relpath]
+            cache.pop(relpath, None)
 
             try:
                 os.remove(path)
