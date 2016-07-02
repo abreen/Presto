@@ -209,7 +209,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             continue
 
         if f == 'htaccess':
-            if not copy_htaccess(path, output_dir):
+            if not copy_htaccess(path, config_get('output_dir')):
                 num_errors += 1
             else:
                 num_published += 1
