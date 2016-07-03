@@ -71,6 +71,30 @@ def should_publish(path):
     return filename[0] != '_'
 
 
+def is_markdown(filename):
+    lower = filename.lower()
+    return lower.endswith('.markdown') or lower.endswith('.md')
+
+
+def extension_to_html(filename):
+    lower = filename.lower()
+    for ext in ['.markdown', '.md']:
+        if lower.endswith(ext):
+            parts = filename.split('.')
+            return '.'.join(parts[:-1]) + '.html'
+
+    return filename
+
+
+def extension_drop(filename):
+    parts = filename.split('.')
+    ext = parts[-1]
+    if ext.lower() in ['md', 'markdown', 'html']:
+        return '.'.join(parts[:-1])
+    else:
+        return filename
+
+
 def copy_htaccess(path, output_dir):
     old_umask = os.umask(0o002)
 
@@ -152,7 +176,7 @@ md = markdown.Markdown(**args)
 with io.open(config_get('template_file'), 'r') as f:
     template = f.read()
 
-num_published, num_errors, num_skipped, num_removed = 0, 0, 0, 0
+num_published = num_errors = num_skipped = num_removed = 0
 
 try:
     cache = get_cache(config_get('cache_file'))
@@ -168,7 +192,7 @@ expected_files = []
 
 for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
     for f in filenames:
-        if '.markdown' not in f and f != 'htaccess':
+        if not is_markdown(f) and f != 'htaccess':
             continue
 
         if f[0] in ['.', '#']:
@@ -181,7 +205,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
         relpath = os.path.relpath(path, config_get('markdown_dir'))
 
         if should_publish(path):
-            expected_files.append(relpath)
+            expected_files.append(extension_drop(relpath))
         else:
             cache.pop(relpath, None)
 
@@ -235,10 +259,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
                 continue
 
         # create path to output directory
-        output_path = os.path.join(
-            config_get('output_dir'),
-            relpath.replace('.markdown', '.html')
-        )
+        output_path = os.path.join(config_get('output_dir'), extension_to_html(relpath))
 
         try:
             if not options.get('dry_run'):
@@ -297,7 +318,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
         if f == '.htaccess':
             relpath = os.path.join(head, 'htaccess')
         else:
-            relpath = os.path.join(head, f.replace('.html', '.markdown'))
+            relpath = os.path.join(head, extension_drop(f))
 
         if relpath not in expected_files:
             cache.pop(relpath, None)
