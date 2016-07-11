@@ -219,7 +219,15 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             num_errors += 1
             continue
 
-        hash = compute_hash(infile)
+        try:
+            hash = compute_hash(infile)
+        except:
+            if options.get('debug'):
+                output.traceback()
+
+            output.error("unable to compute hash for '{}'".format(relpath))
+            num_errors += 1
+            continue
 
         if relpath not in cache or cache[relpath] != hash:
             if should_publish(path):
