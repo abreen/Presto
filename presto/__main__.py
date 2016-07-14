@@ -254,7 +254,17 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
 
             continue
 
-        html, errors = convert.md_to_html(md, template, infile)
+        try:
+            html, errors = convert.md_to_html(md, template, infile)
+        except:
+            cache.pop(relpath, None)
+
+            if options.get('debug'):
+                output.traceback()
+
+            output.error("unable to convert Markdown to HTML for '{}'".format(relpath))
+            num_errors += 1
+            continue
 
         if errors:
             for err in errors:
