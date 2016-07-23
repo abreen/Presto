@@ -22,7 +22,7 @@ def get_cache(cache_file):
     if not os.path.isfile(cache_file):
         return cache
 
-    with io.open(cache_file, mode='r') as f:
+    with io.open(cache_file) as f:
         for line in f:
             tokens = line.split()
             cache[tokens[0]] = tokens[1]
@@ -33,16 +33,18 @@ def get_cache(cache_file):
 def write_cache(cache, cache_file):
     with io.open(cache_file, mode='w') as f:
         for (k, v) in cache.items():
-            f.write(six.u("{}\t{}\n".format(k, v)))
+            f.write(six.u("{}\t{}\n").format(k, v))
 
 
-def compute_hash(file):
+def compute_hash(path):
+    """Open the specified file in binary mode and use its raw bytes to compute
+    and return an MD5 hex digest of the file.
+    """
+    with io.open(path, mode='rb') as f:
+        bytes = f.read()
+
     h = hashlib.md5()
-
-    for line in file:
-        h.update(line.encode('utf-8'))
-
-    file.seek(0)
+    h.update(bytes)
     return h.hexdigest()
 
 
@@ -115,7 +117,7 @@ def copy_htaccess(path, output_dir):
     was_here = os.path.isfile(output_path)
 
     try:
-        with io.open(path, mode='r') as htfile:
+        with io.open(path) as htfile:
             with io.open(output_path, mode='w') as of:
                 of.write(htfile.read())
     except:
@@ -173,7 +175,7 @@ args = {
 
 md = markdown.Markdown(**args)
 
-with io.open(config_get('template_file'), 'r') as f:
+with io.open(config_get('template_file')) as f:
     template = f.read()
 
 num_published = num_errors = num_skipped = num_removed = 0
@@ -210,7 +212,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             cache.pop(relpath, None)
 
         try:
-            infile = io.open(path, mode='r', encoding='utf-8')
+            infile = io.open(path)
         except:
             if options.get('debug'):
                 output.traceback()
@@ -220,7 +222,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             continue
 
         try:
-            hash = compute_hash(infile)
+            hash = compute_hash(path)
         except:
             if options.get('debug'):
                 output.traceback()
