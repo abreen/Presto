@@ -100,6 +100,7 @@ def eval_brackets(s, errors, locals_, globals_):
             if kind == '~':
                 str_out = repr(rv)
             elif kind == '=':
+                # unicode() in Python 2, str() in Python 3
                 str_out = six.text_type(rv)
 
             if ws_before:
@@ -137,14 +138,13 @@ def md_to_html(md, template_str, f):
         for d in metadata['path']:
             sys.path.append(d)
 
-    # make sure all the items in the metadata are either strings or lists of
-    # strings by calling str(): fixes problems with unicode() in Python 2
     new_metadata = {}
     for var, val in metadata.items():
         if len(val) == 1:
-            new_metadata.update({var: str(val[0])})
+            # e.g., foo: bar (only one value for the variable "foo")
+            new_metadata.update({var: val[0]})
         else:
-            new_metadata.update({var: [str(s) for s in val]})
+            new_metadata.update({var: val})
 
     globals_ = {}
     locals_ = {}
