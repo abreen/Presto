@@ -138,13 +138,17 @@ def md_to_html(md, template_str, f):
         for d in metadata['path']:
             sys.path.append(d)
 
+    # in Python 2, the variable names and value(s) are unicode(), since they
+    # come from Python-Markdown that way; we will use str() convert them to
+    # regular strings and accept the fact that non-ASCII characters in them
+    # will produce an issue (in Python 3 this does nothing)
     new_metadata = {}
     for var, val in metadata.items():
         if len(val) == 1:
             # e.g., foo: bar (only one value for the variable "foo")
-            new_metadata.update({var: val[0]})
+            new_metadata.update({str(var): str(val[0])})
         else:
-            new_metadata.update({var: val})
+            new_metadata.update({str(var): [str(s) for s in val]})
 
     globals_ = {}
     locals_ = {}
