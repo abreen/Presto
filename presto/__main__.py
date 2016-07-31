@@ -145,8 +145,18 @@ def config_get(name):
     else:
         return value
 
+def config_get_filepath(name):
+    value = config.get_filepath(name)
+    if value is None:
+        output.error('no value for required configuration variable "{}"'.format(name))
+        sys.exit(1)
+    else:
+        return value
 
-config.load()
+
+config.load(
+    path=options.get('config')
+)
 
 # post-process the whitelist: split on commas and remove extra spaces
 whitelist = [s.strip() for s in config_get('whitelist').split(',')]
@@ -175,13 +185,13 @@ args = {
 
 md = markdown.Markdown(**args)
 
-with io.open(config_get('template_file')) as f:
+with io.open(config_get_filepath('template_file')) as f:
     template = f.read()
 
 num_published = num_errors = num_skipped = num_removed = 0
 
 try:
-    cache = get_cache(config_get('cache_file'))
+    cache = get_cache(config_get_filepath('cache_file'))
 except:
     if options.get('debug'):
         output.traceback()
@@ -192,7 +202,7 @@ except:
 
 expected_files = []
 
-for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
+for dirpath, dirnames, filenames in os.walk(config_get_filepath('markdown_dir')):
     for f in filenames:
         if not is_markdown(f) and f != 'htaccess':
             continue
@@ -204,7 +214,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             continue
 
         path = os.path.join(dirpath, f)
-        relpath = os.path.relpath(path, config_get('markdown_dir'))
+        relpath = os.path.relpath(path, config_get_filepath('markdown_dir'))
 
         if should_publish(path):
             expected_files.append(extension_drop(relpath))
@@ -247,7 +257,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
             if options.get('dry_run'):
                 success = True
             else:
-                success = copy_htaccess(path, config_get('output_dir'))
+                success = copy_htaccess(path, config_get_filepath('output_dir'))
 
             if success:
                 num_published += 1
@@ -279,7 +289,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
                 continue
 
         # create path to output directory
-        output_path = os.path.join(config_get('output_dir'), extension_to_html(relpath))
+        output_path = os.path.join(config_get_filepath('output_dir'), extension_to_html(relpath))
 
         try:
             if not options.get('dry_run'):
@@ -313,13 +323,13 @@ for dirpath, dirnames, filenames in os.walk(config_get('markdown_dir')):
 
 # done publishing all HTML
 # now remove the HTML files for non-existent Markdown
-for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
+for dirpath, dirnames, filenames in os.walk(config_get_filepath('output_dir')):
 
     # skip any directories specified in the whitelist
     while True:
         for d in dirnames:
             dirname = os.path.join(dirpath, d)
-            reldirname = os.path.relpath(dirname, config_get('output_dir'))
+            reldirname = os.path.relpath(dirname, config_get_filepath('output_dir'))
 
             if reldirname in whitelist:
                 dirnames.remove(d)
@@ -332,7 +342,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
             continue
 
         path = os.path.join(dirpath, f)
-        relpath = os.path.relpath(path, config_get('output_dir'))
+        relpath = os.path.relpath(path, config_get_filepath('output_dir'))
 
         head, tail = os.path.split(relpath)
         if f == '.htaccess':
@@ -357,13 +367,13 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
                 num_errors += 1
 
 # make one more pass to remove any directories that are now empty
-for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
+for dirpath, dirnames, filenames in os.walk(config_get_filepath('output_dir')):
 
     # skip any directories specified in the whitelist
     while True:
         for d in dirnames:
             dirname = os.path.join(dirpath, d)
-            reldirname = os.path.relpath(dirname, config_get('output_dir'))
+            reldirname = os.path.relpath(dirname, config_get_filepath('output_dir'))
 
             if reldirname in whitelist:
                 dirnames.remove(d)
@@ -384,7 +394,7 @@ for dirpath, dirnames, filenames in os.walk(config_get('output_dir')):
 
 try:
     if not options.get('dry_run'):
-        write_cache(cache, config_get('cache_file'))
+        write_cache(cache, config_get_filepath('cache_file'))
 except:
     if options.get('debug'):
         output.traceback()

@@ -7,6 +7,11 @@ _parser = argparse.ArgumentParser(
     description='Static website publisher that generates HTML from Markdown'
 )
 _parser.add_argument(
+    '-c', '--config',
+    default='presto.ini',
+    help='path to a presto.ini configuration file (default is presto.ini in current directory)'
+)
+_parser.add_argument(
     '-e', '--use-empty',
     action='store_true',
     help='use empty string for {-sequences that produce errors'

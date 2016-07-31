@@ -11,8 +11,20 @@ import six
 import presto.config as config
 
 
+def _get_path(config_name, path):
+    prefix = config.get_filepath(config_name)
+
+    if prefix is None:
+        raise ValueError(
+            'could not get required configuration variable "{}", needed to '
+            'locate "{}"'.format(config_name, path)
+        )
+
+    return os.path.join(prefix, path)
+
+
 def draft(path):
-    with open(config.get('markdown_dir') + os.sep + path, 'r') as f:
+    with open(_get_path('markdown_dir', path), 'r') as f:
         content = f.read().strip()
 
     content = content.split('\n')
@@ -26,7 +38,7 @@ def draft(path):
 
 
 def partial(path):
-    with open(config.get('partials_dir') + os.sep + path, 'r') as f:
+    with open(_get_path('partials_dir', path), 'r') as f:
         return f.read().strip()
 
 
