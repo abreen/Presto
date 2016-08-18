@@ -71,3 +71,8 @@ def shell(func, args=None, kwargs=None, prompt='>>> ', followup=True):
         s += prompt + '\n'
 
     return s
+
+
+def json(obj):
+    import json
+    return json.dumps(obj)

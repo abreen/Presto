@@ -160,9 +160,13 @@ def md_to_html(md, template_str, f):
     # make the functions in the functions module available
     globals_.update(get_functions(functions))
 
-    # make the metadata for this Markdown draft available
-    for var, val in new_metadata.items():
-        globals_.update({var: val})
+    draft_metadata = {var: val for var, val in new_metadata.items()}
+
+    # make the metadata available under "metadata"
+    globals_.update({'metadata': draft_metadata})
+
+    # make each metadata variable available
+    globals_.update(draft_metadata)
 
     body_md_evald = eval_brackets(body_md, errors, globals_, locals_)
 
