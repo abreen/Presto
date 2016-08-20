@@ -124,11 +124,13 @@ def eval_brackets(s, errors, locals_, globals_):
     return s_evald
 
 
-def md_to_html(md, template_str, f):
+def md_to_html(md, template_str, f, extra_metadata={}):
     """Given a markdown.Markdown object, a string containing an HTML template,
     and a file object open for reading that corresponds to a file containing
     Markdown (with {-sequences), return an HTML string with the Markdown
     elements converted to HTML and the code within the {-sequences executed.
+    An "extra" metadata dictionary can also be specified, and its contents
+    will be merged with the file's metadata.
     """
     body_md = f.read()
 
@@ -156,6 +158,9 @@ def md_to_html(md, template_str, f):
             new_metadata.update({str(var): str(val[0])})
         else:
             new_metadata.update({str(var): [str(s) for s in val]})
+
+    if extra_metadata:
+        new_metadata.update(extra_metadata)
 
     globals_ = {}
     locals_ = {}

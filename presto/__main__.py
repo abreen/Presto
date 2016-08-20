@@ -267,7 +267,7 @@ for dirpath, dirnames, filenames in os.walk(config_get_filepath('markdown_dir'))
             continue
 
         try:
-            html, errors = convert.md_to_html(md, template, infile)
+            html, errors = convert.md_to_html(md, template, infile, {'hash': hash})
         except:
             cache.pop(relpath, None)
 
