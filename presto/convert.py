@@ -13,6 +13,7 @@ from six.moves import cStringIO
 import presto.functions as functions
 import presto.options as options
 import presto.config as config
+import presto.output as output
 
 BRACE_PATTERN = re.compile(r'(\n[ \t]*)?{([~=!])(.*?)\2}', re.DOTALL)
 ESCAPE_PATTERN = re.compile(r'\\([{}~=!])')
@@ -55,6 +56,9 @@ def eval_brackets(s, errors, locals_, globals_):
 
                 errors.append('error occurred executing {! ... !}: ' + e_str)
 
+                if options.get('debug'):
+                    output.traceback()
+
                 if options.get('use_empty'):
                     return ''
                 else:
@@ -86,6 +90,9 @@ def eval_brackets(s, errors, locals_, globals_):
                     errors.append('error occurred evaluating {~ ... ~}: ' + e_str)
                 elif kind == '=':
                     errors.append('error occurred evaluating {= ... =}: ' + e_str)
+
+                if options.get('debug'):
+                    output.traceback()
 
                 if options.get('use_empty'):
                     return ''
