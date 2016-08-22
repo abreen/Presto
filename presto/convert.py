@@ -166,18 +166,23 @@ def md_to_html(md, template_str, f, extra_metadata={}):
     locals_ = {}
     errors = []
 
-    # make the variables defined in the config file available
-    globals_.update(config.get_variables())
-
-    # make the functions in the functions module available
+    # put the utility functions in the functions module in scope
     globals_.update(get_functions(functions))
+
+    ini_variables = config.get_variables()
+
+    # put the variables defined in the config file in scope
+    globals_.update(ini_variables)
 
     draft_metadata = {var: val for var, val in new_metadata.items()}
 
-    # make the metadata available under "metadata"
+    # make the all the metadata available under "metadata"
     globals_.update({'metadata': draft_metadata})
 
-    # make each metadata variable available
+    # make the config file's variables available under "config"
+    globals_.update({'config': ini_variables})
+
+    # put the draft metadata in scope
     globals_.update(draft_metadata)
 
     body_md_evald = eval_brackets(body_md, errors, globals_, locals_)
