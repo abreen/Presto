@@ -83,15 +83,19 @@ def extension_to_html(filename):
     for ext in ['.markdown', '.md']:
         if lower.endswith(ext):
             parts = filename.split('.')
-            return '.'.join(parts[:-1]) + '.html'
+            return '.'.join(parts[:-1]) + config.get('html_extension')
 
     return filename
 
 
 def extension_drop(filename):
+    config_ext = config.get('html_extension').lower()
+    if '.' in config_ext:
+        config_ext = config_ext.split('.')[-1]
+
     parts = filename.split('.')
     ext = parts[-1]
-    if ext.lower() in ['md', 'markdown', 'html']:
+    if ext.lower() in ['md', 'markdown', config_ext]:
         return '.'.join(parts[:-1])
     else:
         return filename

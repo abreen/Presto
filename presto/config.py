@@ -14,7 +14,9 @@ _ini_containing_dir = None          # path of directory containing presto.ini
 def load(path):
     global _conf, _ini_path, _ini_containing_dir
 
-    _conf = configparser.ConfigParser()
+    _conf = configparser.ConfigParser({
+        'html_extension': '.html'
+    })
 
     if not _conf.read(path):
         output.error('could not read configuration file: {}'.format(path))
