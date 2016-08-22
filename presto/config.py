@@ -6,6 +6,10 @@ from six.moves import configparser
 import presto.output as output
 
 
+_PRESTO_SECTION_DEFAULTS = {
+    'html_extension': '.html'
+}
+
 _conf = None                        # configparser.ConfigParser object
 _ini_path = None                    # path to valid presto.ini file
 _ini_containing_dir = None          # path of directory containing presto.ini
@@ -14,9 +18,7 @@ _ini_containing_dir = None          # path of directory containing presto.ini
 def load(path):
     global _conf, _ini_path, _ini_containing_dir
 
-    _conf = configparser.ConfigParser({
-        'html_extension': '.html'
-    })
+    _conf = configparser.ConfigParser()
 
     if not _conf.read(path):
         output.error('could not read configuration file: {}'.format(path))
@@ -41,6 +43,10 @@ def get(name):
 
     if _conf.has_option('presto', name):
         return _conf.get('presto', name)
+    elif name in _PRESTO_SECTION_DEFAULTS:
+        return _PRESTO_SECTION_DEFAULTS[name]
+    else:
+        return None
 
 
 def set(name, value):
