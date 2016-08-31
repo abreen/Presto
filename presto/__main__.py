@@ -101,12 +101,13 @@ def extension_drop(filename):
         return filename
 
 
-def copy_htaccess(path, output_dir):
+def copy_htaccess(path, relpath):
     old_umask = os.umask(0o002)
 
-    parts = path.split(os.sep)
-    parts[-1] = '.htaccess'
-    output_path = output_dir + os.sep + os.sep.join(parts[1:])
+    head, tail = os.path.split(relpath)
+    relpath = os.path.join(head, '.htaccess')
+
+    output_path = os.path.join(config_get_filepath('output_dir'), relpath)
 
     try:
         makedirs(os.path.dirname(output_path))
@@ -261,7 +262,7 @@ for dirpath, dirnames, filenames in os.walk(config_get_filepath('markdown_dir'))
             if options.get('dry_run'):
                 success = True
             else:
-                success = copy_htaccess(path, config_get_filepath('output_dir'))
+                success = copy_htaccess(path, relpath)
 
             if success:
                 num_published += 1
