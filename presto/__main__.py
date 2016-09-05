@@ -8,6 +8,7 @@ import hashlib
 
 import markdown
 import mdx_grid_tables as grid_tables
+import mdx_mathjax as mathjax
 import six
 
 import presto.output as output
@@ -178,12 +179,15 @@ extensions = [
     'codehilite',
     'admonition',
     'toc',
-    grid_tables.GridTableExtension()
+    grid_tables.GridTableExtension(),
+    mathjax.MathJaxExtension()
 ]
 
 args = {
     'extensions': extensions,
-    'extension_configs': {'smarty': [('smart_ellipses', False)]},
+    'extension_configs': {
+        'smarty': [('smart_ellipses', False)]
+    },
     'output_format': 'html5',
     'lazy_ol': False
 }
