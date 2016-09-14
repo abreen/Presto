@@ -4,10 +4,12 @@ Hi all. Welcome to my great web page! Check out the table of contents!
 
 [TOC]
 
-<!--
-HTML comments are removed before the conversion to HTML.
-Therefore this comment will not appear in the output file.
+<!---
+HTML comments opened with *three* dashes are removed before the conversion to
+HTML. Therefore this comment will not appear in the output file.
 -->
+
+<!-- This comment *will* appear in the output file. -->
 
 <span class="blue">Though not recommended, HTML can be written into the
 Markdown file, and it will be preserved in the output.</span>

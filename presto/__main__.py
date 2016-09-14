@@ -9,6 +9,7 @@ import hashlib
 import markdown
 import mdx_grid_tables as grid_tables
 import mdx_mathjax as mathjax
+import mkdcomments as comments
 import six
 
 import presto.output as output
@@ -180,7 +181,8 @@ extensions = [
     'admonition',
     'toc',
     grid_tables.GridTableExtension(),
-    mathjax.MathJaxExtension()
+    mathjax.MathJaxExtension(),
+    comments.CommentsExtension()
 ]
 
 args = {

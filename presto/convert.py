@@ -17,7 +17,6 @@ import presto.output as output
 
 BRACE_PATTERN = re.compile(r'(\n[ \t]*)?{([~=!])(.*?)\2}', re.DOTALL)
 ESCAPE_PATTERN = re.compile(r'\\([{}~=!])')
-COMMENT_PATTERN = re.compile(r'(<!--.*?-->)', re.DOTALL)
 
 
 class BracketError(ValueError):
@@ -133,9 +132,6 @@ def md_to_html(md, template_str, f, extra_metadata={}):
     will be merged with the file's metadata.
     """
     body_md = f.read()
-
-    # remove all HTML comments
-    body_md = re.sub(COMMENT_PATTERN, '', body_md)
 
     # convert using the markdown.Markdown object, just to obtain metadata
     md.convert(body_md)
