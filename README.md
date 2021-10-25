@@ -83,7 +83,7 @@ Python statement.
     interpreter, and the result of calling `repr()` on the expression is
     sent to the page, starting wherever the `{~`-sequence begins.
 
-*   `{= <expr> =}` is just like `{= <expr> =}`, except that `str()` is
+*   `{= <expr> =}` is just like `{~ <expr> ~}`, except that `str()` is
     called on the expression instead of `repr()`. This means that the
     expression can reduce to a string, and the content of the string
     can be sent to the page (without Python adding `'` or `"` around
