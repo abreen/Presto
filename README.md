@@ -2,7 +2,7 @@ Presto is a Python package that helps maintain a static website from Markdown
 sources. It was written as a custom solution for using Markdown on a
 restrictive web server, as an alternative to other static website publishers
 that require elaborate libraries or superuser privileges for installation. Its
-only requirement is Python 2.6 or newer (including Python 3).
+only requirement is Python 3.
 
 
 ## Usage
@@ -18,7 +18,7 @@ Presto is as simple as
     python -m presto <args>
 
 if your system's Python interpreter is named `python`. On some systems, a
-version number may be required at the end (e.g., `python3` or `python2.7`). The
+version number may be required at the end (e.g., `python3`). The
 `-m` flag instructs Python to find the module named Presto and run its
 `__main__.py` file.
 

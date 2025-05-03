@@ -1,12 +1,8 @@
 """Functions that are available for use when evaluating code inside {-sequences
 found in Markdown drafts.
 """
-from __future__ import print_function, with_statement
-
 import sys
 import os
-
-import six
 
 import presto.config as config
 
@@ -57,7 +53,7 @@ def shell(func, args=None, kwargs=None, prompt='>>> ', followup=True):
 
     call_str = func.__name__ + '('
     call_str += ', '.join(map(repr, args))
-    call_str += ', '.join([six.text_type(k) + '=' + repr(v) for k, v in kwargs.items()])
+    call_str += ', '.join([str(k) + '=' + repr(v) for k, v in kwargs.items()])
     call_str += ')'
 
     s += prompt + call_str + '\n'

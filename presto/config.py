@@ -1,7 +1,7 @@
 import sys
 import os
 
-from six.moves import configparser
+import configparser
 
 import presto.output as output
 

@@ -1,5 +1,3 @@
-from __future__ import print_function, with_statement
-
 import sys
 import os
 import io
@@ -10,7 +8,6 @@ import markdown
 import mdx_grid_tables as grid_tables
 import mdx_mathjax as mathjax
 import mkdcomments as comments
-import six
 
 import presto.output as output
 import presto.convert as convert
@@ -35,7 +32,7 @@ def get_cache(cache_file):
 def write_cache(cache, cache_file):
     with io.open(cache_file, mode='w') as f:
         for (k, v) in cache.items():
-            f.write(six.u("{}\t{}\n").format(k, v))
+            f.write(u"{}\t{}\n".format(k, v))
 
 
 def compute_hash(path):
